@@ -56,6 +56,28 @@ export const SimpleVideoTest = () => {
           type: 'video/mp4'
         });
 
+        // Add subtitles
+        const vttUrl = 'http://localhost:8000/api/transcriptions/b347e4ec-d9ed-4c91-a318-d852db4ce834/serve/vtt/';
+        addLog(`Adding subtitles: ${vttUrl}`);
+
+        player.addRemoteTextTrack({
+          kind: 'subtitles',
+          src: vttUrl,
+          srclang: 'en',
+          label: 'English Subtitles',
+          default: true,
+        }, false);
+
+        // Enable subtitles by default
+        setTimeout(() => {
+          const textTracks = player.textTracks();
+          addLog(`Text tracks found: ${textTracks.length}`);
+          if (textTracks.length > 0) {
+            textTracks[0].mode = 'showing';
+            addLog('Subtitles enabled');
+          }
+        }, 1000);
+
       } catch (error) {
         addLog(`Error initializing Video.js: ${error.message}`);
         setStatus('Initialization failed');

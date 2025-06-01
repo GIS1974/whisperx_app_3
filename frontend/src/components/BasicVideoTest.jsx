@@ -57,6 +57,13 @@ export const BasicVideoTest = () => {
               onError={handleError}
             >
               <source src={testUrl} type="video/mp4" />
+              <track
+                kind="subtitles"
+                src="http://localhost:8000/api/transcriptions/b347e4ec-d9ed-4c91-a318-d852db4ce834/serve/vtt/"
+                srcLang="en"
+                label="English"
+                default
+              />
               Your browser does not support the video tag.
             </video>
           </div>

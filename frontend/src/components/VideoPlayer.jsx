@@ -229,32 +229,63 @@ export const VideoPlayer = ({
   };
 
   const setupSubtitles = () => {
-    if (!playerRef.current || !transcription || !transcription.has_vtt) return;
+    if (!playerRef.current || !transcription || !transcription.has_vtt) {
+      console.warn('Cannot setup subtitles:', {
+        hasPlayer: !!playerRef.current,
+        hasTranscription: !!transcription,
+        hasVtt: transcription?.has_vtt
+      });
+      return;
+    }
 
     const vttUrl = transcriptionAPI.getSubtitleFileUrl(mediaFile.id, 'vtt');
+    console.log('Setting up subtitles:', { vttUrl, mediaFile: mediaFile.id });
 
     // Remove existing text tracks
     const existingTracks = playerRef.current.textTracks();
+    console.log(`Removing ${existingTracks.length} existing text tracks`);
     for (let i = existingTracks.length - 1; i >= 0; i--) {
       playerRef.current.removeRemoteTextTrack(existingTracks[i]);
     }
 
     // Add VTT subtitle track
-    playerRef.current.addRemoteTextTrack({
+    const trackOptions = {
       kind: 'subtitles',
       src: vttUrl,
-      srclang: mediaFile.language_transcription,
-      label: `${mediaFile.language_transcription.toUpperCase()} Subtitles`,
+      srclang: mediaFile.language_transcription || 'en',
+      label: `${(mediaFile.language_transcription || 'en').toUpperCase()} Subtitles`,
       default: true,
-    }, false);
+    };
 
-    // Enable subtitles by default
-    setTimeout(() => {
+    console.log('Adding text track:', trackOptions);
+    playerRef.current.addRemoteTextTrack(trackOptions, false);
+
+    // Enable subtitles by default with multiple attempts
+    const enableSubtitles = () => {
       const textTracks = playerRef.current.textTracks();
+      console.log(`Found ${textTracks.length} text tracks`);
+
       if (textTracks.length > 0) {
         textTracks[0].mode = 'showing';
+        console.log('Subtitles enabled, mode:', textTracks[0].mode);
+
+        // Also try to enable via Video.js API
+        if (playerRef.current.textTrackSettings) {
+          playerRef.current.textTrackSettings.setValues({
+            'color': '#FFFFFF',
+            'fontFamily': 'Arial',
+            'fontSize': '1.2em'
+          });
+        }
+      } else {
+        console.warn('No text tracks found for subtitle enabling');
       }
-    }, 100);
+    };
+
+    // Try multiple times with different delays
+    setTimeout(enableSubtitles, 100);
+    setTimeout(enableSubtitles, 500);
+    setTimeout(enableSubtitles, 1000);
   };
 
   const setupInlineSubtitles = () => {
@@ -412,6 +443,16 @@ export const VideoPlayer = ({
             onClick={() => {
               console.log('Force showing player');
               setIsLoading(false);
+              // Try to setup media source after a short delay
+              setTimeout(() => {
+                if (playerRef.current && mediaFile) {
+                  console.log('Manually triggering media source setup');
+                  setupMediaSource();
+                  if (transcription && transcription.has_vtt) {
+                    setupSubtitles();
+                  }
+                }
+              }, 500);
             }}
             className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
           >
@@ -422,9 +463,54 @@ export const VideoPlayer = ({
     );
   }
 
+  const toggleSubtitles = () => {
+    if (!playerRef.current) return;
+
+    const textTracks = playerRef.current.textTracks();
+    console.log('Toggling subtitles, tracks:', textTracks.length);
+
+    if (textTracks.length > 0) {
+      const currentMode = textTracks[0].mode;
+      const newMode = currentMode === 'showing' ? 'hidden' : 'showing';
+      textTracks[0].mode = newMode;
+      console.log(`Subtitle mode changed from ${currentMode} to ${newMode}`);
+    } else {
+      console.log('No text tracks available for toggling');
+      // Try to setup subtitles if they're not loaded
+      if (transcription && transcription.has_vtt) {
+        setupSubtitles();
+      }
+    }
+  };
+
   return (
     <div className={`bg-black rounded-lg overflow-hidden shadow-lg ${className}`}>
       {getPlayerContent()}
+      {/* Debug subtitle controls */}
+      {!isLoading && !playerError && (
+        <div className="p-4 bg-gray-800 text-white text-sm">
+          <button
+            onClick={toggleSubtitles}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs mr-2"
+          >
+            Toggle Subtitles
+          </button>
+          <button
+            onClick={() => {
+              if (transcription && transcription.has_vtt) {
+                console.log('Manually triggering subtitle setup');
+                setupSubtitles();
+              }
+            }}
+            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs"
+          >
+            Reload Subtitles
+          </button>
+          <span className="ml-4 text-gray-300">
+            VTT Available: {transcription?.has_vtt ? 'Yes' : 'No'}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
