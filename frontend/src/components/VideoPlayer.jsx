@@ -18,59 +18,48 @@ export const VideoPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize Video.js player with proper DOM checking
+    // Initialize Video.js player with simplified approach like the working test
     const initializePlayer = () => {
       if (!videoRef.current || playerRef.current) {
         return;
       }
 
-      const videoElement = videoRef.current;
-
-      // Ensure the element is in the DOM
-      if (!videoElement.isConnected) {
-        console.warn('Video element not yet connected to DOM, retrying...');
-        setTimeout(initializePlayer, 100);
-        return;
-      }
-
-      const playerOptions = {
-        controls: true,
-        responsive: true,
-        fluid: true,
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
-        preload: 'metadata',
-        errorDisplay: true,
-        plugins: {
-          // Add any Video.js plugins here
-        },
-      };
+      console.log('Initializing Video.js player...');
 
       try {
-        // Add a timeout to prevent infinite loading
-        const loadingTimeout = setTimeout(() => {
-          console.warn('Player loading timeout reached - forcing player to show');
+        const player = videojs(videoRef.current, {
+          controls: true,
+          responsive: true,
+          fluid: true,
+          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+          preload: 'metadata',
+          errorDisplay: true,
+        }, () => {
+          console.log('Video.js player ready callback fired');
           setIsLoading(false);
-        }, 30000); // 30 second timeout for large video files
-
-        playerRef.current = videojs(videoElement, playerOptions, () => {
-          console.log('Video.js player ready');
-          setIsLoading(false);
-          clearTimeout(loadingTimeout);
           if (onReady) {
-            onReady(playerRef.current);
+            onReady(player);
           }
+
+          // Set up the media source now that player is ready
+          setTimeout(() => {
+            setupMediaSource();
+
+            // Set up subtitles if available
+            if (transcription && transcription.has_vtt) {
+              setTimeout(() => setupSubtitles(), 500);
+            } else if (subtitles && subtitles.length > 0) {
+              setTimeout(() => setupInlineSubtitles(), 500);
+            }
+          }, 100);
         });
 
-        // Clear timeout when player is ready
-        playerRef.current.ready(() => {
-          clearTimeout(loadingTimeout);
-        });
+        playerRef.current = player;
 
         // Set up error handling
-        playerRef.current.on('error', (error) => {
+        player.on('error', (error) => {
           console.error('Video.js player error:', error);
-          console.error('Player error details:', playerRef.current.error());
-          const errorDetails = playerRef.current.error();
+          const errorDetails = player.error();
           let errorMessage = 'Failed to load video';
 
           if (errorDetails) {
@@ -94,42 +83,31 @@ export const VideoPlayer = ({
 
           setPlayerError(errorMessage);
           setIsLoading(false);
-          clearTimeout(loadingTimeout);
         });
 
         // Set up time update handler
         if (onTimeUpdate) {
-          playerRef.current.on('timeupdate', onTimeUpdate);
+          player.on('timeupdate', onTimeUpdate);
         }
 
         // Add debug event listeners
-        playerRef.current.on('loadstart', () => {
+        player.on('loadstart', () => {
           console.log('Video.js: loadstart event');
         });
 
-        playerRef.current.on('loadedmetadata', () => {
+        player.on('loadedmetadata', () => {
           console.log('Video.js: loadedmetadata event');
         });
 
-        playerRef.current.on('canplay', () => {
+        player.on('canplay', () => {
           console.log('Video.js: canplay event');
           setIsLoading(false);
-          clearTimeout(loadingTimeout);
         });
 
-        playerRef.current.on('canplaythrough', () => {
+        player.on('canplaythrough', () => {
           console.log('Video.js: canplaythrough event');
         });
 
-        // Set up the media source
-        setupMediaSource();
-
-        // Set up subtitles if available
-        if (transcription && transcription.has_vtt) {
-          setupSubtitles();
-        } else if (subtitles && subtitles.length > 0) {
-          setupInlineSubtitles();
-        }
       } catch (error) {
         console.error('Error initializing Video.js player:', error);
         setPlayerError(`Player initialization error: ${error.message}`);
@@ -138,7 +116,7 @@ export const VideoPlayer = ({
     };
 
     // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(initializePlayer, 50);
+    const timeoutId = setTimeout(initializePlayer, 100);
 
     return () => {
       clearTimeout(timeoutId);
@@ -155,6 +133,17 @@ export const VideoPlayer = ({
   }, [src, subtitles, mediaFile, transcription]);
 
   const setupMediaSource = () => {
+    console.log('setupMediaSource called with:', {
+      hasPlayer: !!playerRef.current,
+      hasMediaFile: !!mediaFile,
+      mediaFile: mediaFile ? {
+        id: mediaFile.id,
+        filename: mediaFile.filename_original,
+        mime_type: mediaFile.mime_type,
+        file_type: mediaFile.file_type
+      } : null
+    });
+
     if (!playerRef.current) {
       console.warn('Player not ready for media source setup');
       return;
@@ -502,9 +491,54 @@ export const VideoPlayer = ({
                 setupSubtitles();
               }
             }}
-            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs"
+            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs mr-2"
           >
             Reload Subtitles
+          </button>
+          <button
+            onClick={() => {
+              console.log('Manually triggering media source setup');
+              setupMediaSource();
+            }}
+            className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs mr-2"
+          >
+            Reload Media
+          </button>
+          <button
+            onClick={() => {
+              const mediaUrl = src || mediaAPI.getMediaFileUrl(mediaFile.id);
+              console.log('Testing HTML5 video with URL:', mediaUrl);
+
+              // Create a simple HTML5 video element for testing
+              const testVideo = document.createElement('video');
+              testVideo.src = mediaUrl;
+              testVideo.controls = true;
+              testVideo.style.width = '100%';
+              testVideo.style.maxWidth = '400px';
+              testVideo.style.border = '2px solid red';
+
+              // Add it to the page temporarily
+              const container = document.createElement('div');
+              container.style.position = 'fixed';
+              container.style.top = '10px';
+              container.style.right = '10px';
+              container.style.zIndex = '9999';
+              container.style.background = 'white';
+              container.style.padding = '10px';
+              container.appendChild(testVideo);
+
+              const closeBtn = document.createElement('button');
+              closeBtn.textContent = 'Close Test';
+              closeBtn.onclick = () => document.body.removeChild(container);
+              closeBtn.style.display = 'block';
+              closeBtn.style.marginTop = '5px';
+              container.appendChild(closeBtn);
+
+              document.body.appendChild(container);
+            }}
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs mr-2"
+          >
+            Test HTML5 Video
           </button>
           <span className="ml-4 text-gray-300">
             VTT Available: {transcription?.has_vtt ? 'Yes' : 'No'}
