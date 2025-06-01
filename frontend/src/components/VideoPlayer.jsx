@@ -103,28 +103,59 @@ export const VideoPlayer = ({
   }, [src, subtitles, mediaFile, transcription]);
 
   const setupMediaSource = () => {
-    if (!playerRef.current) return;
+    if (!playerRef.current) {
+      console.warn('Player not ready for media source setup');
+      return;
+    }
+
+    if (!mediaFile) {
+      console.warn('No media file provided for source setup');
+      return;
+    }
 
     try {
       // Use src prop if provided, otherwise fall back to mediaFile
-      const mediaUrl = src || (mediaFile ? mediaAPI.getMediaFileUrl(mediaFile.id) : null);
+      const mediaUrl = src || mediaAPI.getMediaFileUrl(mediaFile.id);
       if (!mediaUrl) {
         console.warn('No media source available', { src, mediaFile });
+        setPlayerError('No media source URL available');
         return;
       }
 
       console.log('Setting up media source:', {
         mediaUrl,
-        mediaFile: mediaFile ? { id: mediaFile.id, mime_type: mediaFile.mime_type } : null,
+        mediaFile: {
+          id: mediaFile.id,
+          mime_type: mediaFile.mime_type,
+          file_type: mediaFile.file_type,
+          filename: mediaFile.filename_original
+        },
         src
       });
 
       const sourceOptions = {
         src: mediaUrl,
-        type: mediaFile?.mime_type || 'video/mp4', // Default to mp4 if no mime type
+        type: mediaFile.mime_type || 'video/mp4', // Default to mp4 if no mime type
       };
 
       console.log('Video.js source options:', sourceOptions);
+
+      // Test if the URL is accessible
+      fetch(mediaUrl, { method: 'HEAD' })
+        .then(response => {
+          console.log('Media URL accessibility test:', {
+            status: response.status,
+            headers: Object.fromEntries(response.headers.entries())
+          });
+          if (!response.ok) {
+            throw new Error(`Media file not accessible: ${response.status}`);
+          }
+        })
+        .catch(error => {
+          console.error('Media URL accessibility test failed:', error);
+          setPlayerError(`Media file not accessible: ${error.message}`);
+        });
+
       playerRef.current.src(sourceOptions);
 
       // Clear any previous errors when starting to load new media
@@ -226,11 +257,23 @@ export const VideoPlayer = ({
   }, [transcription]);
 
   const getPlayerContent = () => {
+    // Add safety check for mediaFile
+    if (!mediaFile) {
+      return (
+        <div className="bg-gray-900 rounded-lg overflow-hidden p-8 text-center">
+          <div className="text-white">
+            <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-300">Loading media file...</p>
+          </div>
+        </div>
+      );
+    }
+
     if (mediaFile.file_type === 'audio') {
       // For audio files, show a static image or visualization
       return (
-        <div className="video-player-container bg-gray-900 flex items-center justify-center">
-          <div className="text-center text-white">
+        <div className="video-player-container bg-gray-900 flex items-center justify-center relative min-h-[400px]">
+          <div className="text-center text-white z-10">
             <div className="text-6xl mb-4">🎵</div>
             <h3 className="text-xl font-medium">{mediaFile.filename_original}</h3>
             <p className="text-gray-300 mt-2">Audio File</p>
@@ -255,10 +298,10 @@ export const VideoPlayer = ({
 
     // For video files, show normal video player
     return (
-      <div className="video-player-container">
+      <div className="video-player-container min-h-[400px]">
         <video
           ref={videoRef}
-          className="video-js vjs-default-skin"
+          className="video-js vjs-default-skin w-full h-full"
           controls
           preload="auto"
           data-setup="{}"

@@ -344,7 +344,7 @@ export const PlayerPage = () => {
       )}
 
       {/* Video Player and ESL Features */}
-      {mediaFile.is_completed && transcription && (
+      {mediaFile.is_completed && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Video Player Column */}
           <div className="lg:col-span-2 space-y-4">
@@ -352,6 +352,7 @@ export const PlayerPage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <VideoPlayer
                 mediaFile={mediaFile}
+                transcription={transcription}
                 subtitles={segments}
                 onReady={handlePlayerReady}
                 onTimeUpdate={handleTimeUpdate}
@@ -359,60 +360,87 @@ export const PlayerPage = () => {
               />
             </div>
 
-            {/* ESL Controls */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <ESLControls
-                listenRepeatMode={listenRepeatMode}
-                playbackSpeed={playbackSpeed}
-                audioMuted={audioMuted}
-                currentSegment={currentSegment}
-                onListenRepeatToggle={handleListenRepeatToggle}
-                onSpeedChange={handleSpeedChange}
-                onMuteToggle={handleMuteToggle}
-                onReplaySegment={handleReplaySegment}
-                onPlayNextSegment={handlePlayNextSegment}
-                canPlayNext={activeSegmentIndex < segments.length - 1}
-              />
-            </div>
-
-            {/* Download Options */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Transcript</h3>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => downloadSubtitle('vtt')}
-                  className="btn-primary text-sm"
-                >
-                  Download VTT
-                </button>
-                <button
-                  onClick={() => downloadSubtitle('srt')}
-                  className="btn-primary text-sm"
-                >
-                  Download SRT
-                </button>
-                <button
-                  onClick={() => downloadSubtitle('txt')}
-                  className="btn-primary text-sm"
-                >
-                  Download TXT
-                </button>
+            {/* ESL Controls - Only show when transcription is available */}
+            {transcription && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <ESLControls
+                  listenRepeatMode={listenRepeatMode}
+                  playbackSpeed={playbackSpeed}
+                  audioMuted={audioMuted}
+                  currentSegment={currentSegment}
+                  onListenRepeatToggle={handleListenRepeatToggle}
+                  onSpeedChange={handleSpeedChange}
+                  onMuteToggle={handleMuteToggle}
+                  onReplaySegment={handleReplaySegment}
+                  onPlayNextSegment={handlePlayNextSegment}
+                  canPlayNext={activeSegmentIndex < segments.length - 1}
+                />
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                VTT: WebVTT format for web players • SRT: SubRip format for video players • TXT: Plain text format
-              </p>
-            </div>
+            )}
+
+            {/* Download Options - Only show when transcription is available */}
+            {transcription && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Transcript</h3>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => downloadSubtitle('vtt')}
+                    className="btn-primary text-sm"
+                  >
+                    Download VTT
+                  </button>
+                  <button
+                    onClick={() => downloadSubtitle('srt')}
+                    className="btn-primary text-sm"
+                  >
+                    Download SRT
+                  </button>
+                  <button
+                    onClick={() => downloadSubtitle('txt')}
+                    className="btn-primary text-sm"
+                  >
+                    Download TXT
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  VTT: WebVTT format for web players • SRT: SubRip format for video players • TXT: Plain text format
+                </p>
+              </div>
+            )}
+
+            {/* Transcription Loading State */}
+            {!transcription && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
+                  <div>
+                    <h3 className="text-sm font-medium text-yellow-800">Loading Transcription</h3>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Transcription data is being loaded. ESL features will be available shortly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Transcript Panel Column */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
-              <TranscriptPanel
-                segments={segments}
-                activeSegmentIndex={activeSegmentIndex}
-                currentTime={currentTime}
-                onSegmentClick={handleSegmentClick}
-              />
+              {transcription ? (
+                <TranscriptPanel
+                  segments={segments}
+                  activeSegmentIndex={activeSegmentIndex}
+                  currentTime={currentTime}
+                  onSegmentClick={handleSegmentClick}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Transcript</h3>
+                  <p className="text-gray-500">Transcript will appear here once transcription data is loaded.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
