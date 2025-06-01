@@ -13,6 +13,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UploadPage } from './pages/UploadPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { TestPlayerPage } from './pages/TestPlayerPage';
+import { SimpleVideoTest } from './components/SimpleVideoTest';
+import { BasicVideoTest } from './components/BasicVideoTest';
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/player/:fileId" element={<PlayerPage />} />
               <Route path="/test-player" element={<TestPlayerPage />} />
+              <Route path="/simple-video-test" element={<SimpleVideoTest />} />
+              <Route path="/basic-video-test" element={<BasicVideoTest />} />
 
               {/* Default redirect */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

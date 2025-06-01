@@ -46,20 +46,55 @@ export const VideoPlayer = ({
       };
 
       try {
+        // Add a timeout to prevent infinite loading
+        const loadingTimeout = setTimeout(() => {
+          console.warn('Player loading timeout reached - forcing player to show');
+          setIsLoading(false);
+        }, 30000); // 30 second timeout for large video files
+
         playerRef.current = videojs(videoElement, playerOptions, () => {
           console.log('Video.js player ready');
           setIsLoading(false);
+          clearTimeout(loadingTimeout);
           if (onReady) {
             onReady(playerRef.current);
           }
+        });
+
+        // Clear timeout when player is ready
+        playerRef.current.ready(() => {
+          clearTimeout(loadingTimeout);
         });
 
         // Set up error handling
         playerRef.current.on('error', (error) => {
           console.error('Video.js player error:', error);
           console.error('Player error details:', playerRef.current.error());
-          setPlayerError('Failed to load video: ' + (playerRef.current.error()?.message || 'Unknown error'));
+          const errorDetails = playerRef.current.error();
+          let errorMessage = 'Failed to load video';
+
+          if (errorDetails) {
+            switch (errorDetails.code) {
+              case 1:
+                errorMessage = 'Video loading was aborted';
+                break;
+              case 2:
+                errorMessage = 'Network error occurred while loading video';
+                break;
+              case 3:
+                errorMessage = 'Video format not supported or corrupted';
+                break;
+              case 4:
+                errorMessage = 'Video source not found or not accessible';
+                break;
+              default:
+                errorMessage = errorDetails.message || 'Unknown video error';
+            }
+          }
+
+          setPlayerError(errorMessage);
           setIsLoading(false);
+          clearTimeout(loadingTimeout);
         });
 
         // Set up time update handler
@@ -67,7 +102,24 @@ export const VideoPlayer = ({
           playerRef.current.on('timeupdate', onTimeUpdate);
         }
 
+        // Add debug event listeners
+        playerRef.current.on('loadstart', () => {
+          console.log('Video.js: loadstart event');
+        });
 
+        playerRef.current.on('loadedmetadata', () => {
+          console.log('Video.js: loadedmetadata event');
+        });
+
+        playerRef.current.on('canplay', () => {
+          console.log('Video.js: canplay event');
+          setIsLoading(false);
+          clearTimeout(loadingTimeout);
+        });
+
+        playerRef.current.on('canplaythrough', () => {
+          console.log('Video.js: canplaythrough event');
+        });
 
         // Set up the media source
         setupMediaSource();
@@ -140,23 +192,32 @@ export const VideoPlayer = ({
 
       console.log('Video.js source options:', sourceOptions);
 
-      // Test if the URL is accessible
-      fetch(mediaUrl, { method: 'HEAD' })
+      // Set the media source immediately
+      playerRef.current.src(sourceOptions);
+
+      // Test if the URL is accessible (non-blocking) using range request
+      fetch(mediaUrl, {
+        method: 'GET',
+        headers: {
+          'Range': 'bytes=0-1023' // Request first 1KB to test accessibility
+        }
+      })
         .then(response => {
           console.log('Media URL accessibility test:', {
             status: response.status,
             headers: Object.fromEntries(response.headers.entries())
           });
-          if (!response.ok) {
-            throw new Error(`Media file not accessible: ${response.status}`);
+          if (!response.ok && response.status !== 206) {
+            console.warn(`Media file accessibility warning: ${response.status}`);
+            // Don't set error here, let Video.js handle it
+          } else {
+            console.log('Media file is accessible');
           }
         })
         .catch(error => {
-          console.error('Media URL accessibility test failed:', error);
-          setPlayerError(`Media file not accessible: ${error.message}`);
+          console.warn('Media URL accessibility test failed:', error);
+          // Don't set error here, let Video.js handle it
         });
-
-      playerRef.current.src(sourceOptions);
 
       // Clear any previous errors when starting to load new media
       setPlayerError(null);
@@ -347,6 +408,15 @@ export const VideoPlayer = ({
         <div className="text-white">
           <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-300">Loading media player...</p>
+          <button
+            onClick={() => {
+              console.log('Force showing player');
+              setIsLoading(false);
+            }}
+            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+          >
+            Force Show Player
+          </button>
         </div>
       </div>
     );
