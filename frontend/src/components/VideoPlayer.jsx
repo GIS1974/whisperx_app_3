@@ -54,20 +54,20 @@ export const VideoPlayer = ({
           }
         });
 
+        // Set up error handling
+        playerRef.current.on('error', (error) => {
+          console.error('Video.js player error:', error);
+          console.error('Player error details:', playerRef.current.error());
+          setPlayerError('Failed to load video: ' + (playerRef.current.error()?.message || 'Unknown error'));
+          setIsLoading(false);
+        });
+
         // Set up time update handler
         if (onTimeUpdate) {
           playerRef.current.on('timeupdate', onTimeUpdate);
         }
 
-        // Set up error handling
-        playerRef.current.on('error', (error) => {
-          console.error('Video.js player error:', error);
-          const playerError = playerRef.current.error();
-          if (playerError) {
-            setPlayerError(`Media Error (${playerError.code}): ${playerError.message}`);
-          }
-          setIsLoading(false);
-        });
+
 
         // Set up the media source
         setupMediaSource();
@@ -109,32 +109,26 @@ export const VideoPlayer = ({
       // Use src prop if provided, otherwise fall back to mediaFile
       const mediaUrl = src || (mediaFile ? mediaAPI.getMediaFileUrl(mediaFile.id) : null);
       if (!mediaUrl) {
-        console.warn('No media source available');
+        console.warn('No media source available', { src, mediaFile });
         return;
       }
 
-      console.log('Setting up media source:', { mediaUrl });
+      console.log('Setting up media source:', {
+        mediaUrl,
+        mediaFile: mediaFile ? { id: mediaFile.id, mime_type: mediaFile.mime_type } : null,
+        src
+      });
 
       const sourceOptions = {
         src: mediaUrl,
         type: mediaFile?.mime_type || 'video/mp4', // Default to mp4 if no mime type
       };
 
+      console.log('Video.js source options:', sourceOptions);
       playerRef.current.src(sourceOptions);
 
-      // Add load event listeners
-      playerRef.current.on('loadstart', () => {
-        console.log('Media load started');
-        setPlayerError(null);
-      });
-
-      playerRef.current.on('loadedmetadata', () => {
-        console.log('Media metadata loaded');
-      });
-
-      playerRef.current.on('canplay', () => {
-        console.log('Media can start playing');
-      });
+      // Clear any previous errors when starting to load new media
+      setPlayerError(null);
 
     } catch (error) {
       console.error('Error setting up media source:', error);
