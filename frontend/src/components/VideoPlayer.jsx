@@ -21,10 +21,17 @@ export const VideoPlayer = ({
     // Initialize Video.js player with simplified approach like the working test
     const initializePlayer = () => {
       if (!videoRef.current || playerRef.current) {
+        console.log('Skipping player init:', {
+          hasVideoRef: !!videoRef.current,
+          hasPlayerRef: !!playerRef.current
+        });
         return;
       }
 
-      console.log('Initializing Video.js player...');
+      console.log('Initializing Video.js player...', {
+        videoElement: videoRef.current,
+        isConnected: videoRef.current.isConnected
+      });
 
       try {
         const player = videojs(videoRef.current, {
@@ -54,6 +61,7 @@ export const VideoPlayer = ({
           }, 100);
         });
 
+        console.log('Video.js player created:', player);
         playerRef.current = player;
 
         // Set up error handling
@@ -338,48 +346,31 @@ export const VideoPlayer = ({
   }, [transcription]);
 
   const getPlayerContent = () => {
-    // Add safety check for mediaFile
-    if (!mediaFile) {
-      return (
-        <div className="bg-gray-900 rounded-lg overflow-hidden p-8 text-center">
-          <div className="text-white">
-            <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-300">Loading media file...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (mediaFile.file_type === 'audio') {
-      // For audio files, show a static image or visualization
-      return (
-        <div className="video-player-container bg-gray-900 flex items-center justify-center relative min-h-[400px]">
-          <div className="text-center text-white z-10">
-            <div className="text-6xl mb-4">🎵</div>
-            <h3 className="text-xl font-medium">{mediaFile.filename_original}</h3>
-            <p className="text-gray-300 mt-2">Audio File</p>
-          </div>
-          <video
-            ref={videoRef}
-            className="video-js vjs-default-skin absolute inset-0 w-full h-full opacity-0"
-            controls
-            preload="auto"
-            data-setup="{}"
-          >
-            <p className="vjs-no-js">
-              To view this audio, please enable JavaScript, and consider upgrading to a web browser that
-              <a href="https://videojs.com/html5-video-support/" target="_blank" rel="noopener noreferrer">
-                supports HTML5 audio
-              </a>
-            </p>
-          </video>
-        </div>
-      );
-    }
-
-    // For video files, show normal video player
+    // Always render the video element to avoid Video.js initialization issues
     return (
-      <div className="video-player-container min-h-[400px]">
+      <div className="video-player-container min-h-[400px] relative">
+        {/* Show loading overlay for media file */}
+        {!mediaFile && (
+          <div className="absolute inset-0 bg-gray-900 rounded-lg overflow-hidden p-8 text-center flex items-center justify-center z-10">
+            <div className="text-white">
+              <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-300">Loading media file...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Show audio file overlay */}
+        {mediaFile && mediaFile.file_type === 'audio' && (
+          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
+            <div className="text-center text-white">
+              <div className="text-6xl mb-4">🎵</div>
+              <h3 className="text-xl font-medium">{mediaFile.filename_original}</h3>
+              <p className="text-gray-300 mt-2">Audio File</p>
+            </div>
+          </div>
+        )}
+
+        {/* Always render video element for Video.js */}
         <video
           ref={videoRef}
           className="video-js vjs-default-skin w-full h-full"
@@ -539,6 +530,47 @@ export const VideoPlayer = ({
             className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs mr-2"
           >
             Test HTML5 Video
+          </button>
+          <button
+            onClick={() => {
+              console.log('Manually triggering Video.js initialization');
+              console.log('Current state:', {
+                hasVideoRef: !!videoRef.current,
+                hasPlayerRef: !!playerRef.current,
+                videoElement: videoRef.current
+              });
+
+              // Force re-initialization
+              if (playerRef.current && !playerRef.current.isDisposed()) {
+                console.log('Disposing existing player');
+                playerRef.current.dispose();
+                playerRef.current = null;
+              }
+
+              // Try to initialize again
+              setTimeout(() => {
+                if (videoRef.current && !playerRef.current) {
+                  console.log('Attempting manual Video.js initialization');
+                  try {
+                    const player = videojs(videoRef.current, {
+                      controls: true,
+                      responsive: true,
+                      fluid: true,
+                    }, () => {
+                      console.log('Manual Video.js player ready!');
+                      setIsLoading(false);
+                      setupMediaSource();
+                    });
+                    playerRef.current = player;
+                  } catch (error) {
+                    console.error('Manual initialization failed:', error);
+                  }
+                }
+              }, 100);
+            }}
+            className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs mr-2"
+          >
+            Init Video.js
           </button>
           <span className="ml-4 text-gray-300">
             VTT Available: {transcription?.has_vtt ? 'Yes' : 'No'}
