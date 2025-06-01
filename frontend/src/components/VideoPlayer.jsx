@@ -17,27 +17,12 @@ export const VideoPlayer = ({
   const [playerError, setPlayerError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Separate effect to initialize Video.js when video element becomes available
+  // Initialize Video.js when video element becomes available
   useEffect(() => {
-    console.log('VideoPlayer useEffect running, checking video element...');
-    console.log('videoRef.current:', videoRef.current);
-    console.log('playerRef.current:', playerRef.current);
-
     const initializePlayer = () => {
-      console.log('initializePlayer called, checking conditions:', {
-        hasVideoRef: !!videoRef.current,
-        hasPlayerRef: !!playerRef.current,
-        videoElement: videoRef.current
-      });
-
       if (!videoRef.current || playerRef.current) {
         return false; // Return false to indicate initialization didn't happen
       }
-
-      console.log('Initializing Video.js player...', {
-        videoElement: videoRef.current,
-        isConnected: videoRef.current.isConnected
-      });
 
       try {
         const player = videojs(videoRef.current, {
@@ -48,7 +33,6 @@ export const VideoPlayer = ({
           preload: 'metadata',
           errorDisplay: true,
         }, () => {
-          console.log('Video.js player ready callback fired');
           setIsLoading(false);
           if (onReady) {
             onReady(player);
@@ -67,7 +51,6 @@ export const VideoPlayer = ({
           }, 100);
         });
 
-        console.log('Video.js player created:', player);
         playerRef.current = player;
 
         // Set up error handling
@@ -104,22 +87,9 @@ export const VideoPlayer = ({
           player.on('timeupdate', onTimeUpdate);
         }
 
-        // Add debug event listeners
-        player.on('loadstart', () => {
-          console.log('Video.js: loadstart event');
-        });
-
-        player.on('loadedmetadata', () => {
-          console.log('Video.js: loadedmetadata event');
-        });
-
+        // Set up essential event listeners
         player.on('canplay', () => {
-          console.log('Video.js: canplay event');
           setIsLoading(false);
-        });
-
-        player.on('canplaythrough', () => {
-          console.log('Video.js: canplaythrough event');
         });
 
         return true; // Return true to indicate successful initialization
@@ -134,34 +104,29 @@ export const VideoPlayer = ({
 
     // Try to initialize immediately
     if (initializePlayer()) {
-      console.log('Video.js initialization successful immediately');
       return; // Success, no need for retries
     }
 
     // If immediate initialization failed, try with delays
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 5;
     let retryTimeoutId;
 
     const retryInitialization = () => {
-      // Check if player was already initialized (maybe by another effect run)
+      // Check if player was already initialized
       if (playerRef.current) {
-        console.log('Video.js player already exists, stopping retry attempts');
         return;
       }
 
       attempts++;
-      console.log(`Video.js initialization attempt ${attempts}/${maxAttempts}`);
 
       if (initializePlayer()) {
-        console.log('Video.js initialization successful on attempt', attempts);
         return; // Success
       }
 
       if (attempts < maxAttempts) {
-        retryTimeoutId = setTimeout(retryInitialization, 200 * attempts); // Increasing delay
+        retryTimeoutId = setTimeout(retryInitialization, 200 * attempts);
       } else {
-        console.warn('Video.js initialization failed after', maxAttempts, 'attempts');
         setPlayerError('Failed to initialize video player');
         setIsLoading(false);
       }
@@ -188,24 +153,7 @@ export const VideoPlayer = ({
   }, []); // Empty dependency array - only run once on mount
 
   const setupMediaSource = () => {
-    console.log('setupMediaSource called with:', {
-      hasPlayer: !!playerRef.current,
-      hasMediaFile: !!mediaFile,
-      mediaFile: mediaFile ? {
-        id: mediaFile.id,
-        filename: mediaFile.filename_original,
-        mime_type: mediaFile.mime_type,
-        file_type: mediaFile.file_type
-      } : null
-    });
-
-    if (!playerRef.current) {
-      console.warn('Player not ready for media source setup');
-      return;
-    }
-
-    if (!mediaFile) {
-      console.warn('No media file provided for source setup');
+    if (!playerRef.current || !mediaFile) {
       return;
     }
 
@@ -213,57 +161,19 @@ export const VideoPlayer = ({
       // Use src prop if provided, otherwise fall back to mediaFile
       const mediaUrl = src || mediaAPI.getMediaFileUrl(mediaFile.id);
       if (!mediaUrl) {
-        console.warn('No media source available', { src, mediaFile });
         setPlayerError('No media source URL available');
         return;
       }
 
-      console.log('Setting up media source:', {
-        mediaUrl,
-        mediaFile: {
-          id: mediaFile.id,
-          mime_type: mediaFile.mime_type,
-          file_type: mediaFile.file_type,
-          filename: mediaFile.filename_original
-        },
-        src
-      });
-
       const sourceOptions = {
         src: mediaUrl,
-        type: mediaFile.mime_type || 'video/mp4', // Default to mp4 if no mime type
+        type: mediaFile.mime_type || 'video/mp4',
       };
 
-      console.log('Video.js source options:', sourceOptions);
-
-      // Set the media source immediately
+      // Set the media source
       playerRef.current.src(sourceOptions);
 
-      // Test if the URL is accessible (non-blocking) using range request
-      fetch(mediaUrl, {
-        method: 'GET',
-        headers: {
-          'Range': 'bytes=0-1023' // Request first 1KB to test accessibility
-        }
-      })
-        .then(response => {
-          console.log('Media URL accessibility test:', {
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries())
-          });
-          if (!response.ok && response.status !== 206) {
-            console.warn(`Media file accessibility warning: ${response.status}`);
-            // Don't set error here, let Video.js handle it
-          } else {
-            console.log('Media file is accessible');
-          }
-        })
-        .catch(error => {
-          console.warn('Media URL accessibility test failed:', error);
-          // Don't set error here, let Video.js handle it
-        });
-
-      // Clear any previous errors when starting to load new media
+      // Clear any previous errors
       setPlayerError(null);
 
     } catch (error) {
@@ -274,20 +184,13 @@ export const VideoPlayer = ({
 
   const setupSubtitles = () => {
     if (!playerRef.current || !transcription || !transcription.has_vtt) {
-      console.warn('Cannot setup subtitles:', {
-        hasPlayer: !!playerRef.current,
-        hasTranscription: !!transcription,
-        hasVtt: transcription?.has_vtt
-      });
       return;
     }
 
     const vttUrl = transcriptionAPI.getSubtitleFileUrl(mediaFile.id, 'vtt');
-    console.log('Setting up subtitles:', { vttUrl, mediaFile: mediaFile.id });
 
     // Remove existing text tracks
     const existingTracks = playerRef.current.textTracks();
-    console.log(`Removing ${existingTracks.length} existing text tracks`);
     for (let i = existingTracks.length - 1; i >= 0; i--) {
       playerRef.current.removeRemoteTextTrack(existingTracks[i]);
     }
@@ -301,32 +204,17 @@ export const VideoPlayer = ({
       default: true,
     };
 
-    console.log('Adding text track:', trackOptions);
     playerRef.current.addRemoteTextTrack(trackOptions, false);
 
-    // Enable subtitles by default with multiple attempts
+    // Enable subtitles by default
     const enableSubtitles = () => {
       const textTracks = playerRef.current.textTracks();
-      console.log(`Found ${textTracks.length} text tracks`);
-
       if (textTracks.length > 0) {
         textTracks[0].mode = 'showing';
-        console.log('Subtitles enabled, mode:', textTracks[0].mode);
-
-        // Also try to enable via Video.js API
-        if (playerRef.current.textTrackSettings) {
-          playerRef.current.textTrackSettings.setValues({
-            'color': '#FFFFFF',
-            'fontFamily': 'Arial',
-            'fontSize': '1.2em'
-          });
-        }
-      } else {
-        console.warn('No text tracks found for subtitle enabling');
       }
     };
 
-    // Try multiple times with different delays
+    // Try multiple times to ensure subtitles are enabled
     setTimeout(enableSubtitles, 100);
     setTimeout(enableSubtitles, 500);
     setTimeout(enableSubtitles, 1000);
@@ -436,28 +324,6 @@ export const VideoPlayer = ({
     );
   };
 
-
-
-  const toggleSubtitles = () => {
-    if (!playerRef.current) return;
-
-    const textTracks = playerRef.current.textTracks();
-    console.log('Toggling subtitles, tracks:', textTracks.length);
-
-    if (textTracks.length > 0) {
-      const currentMode = textTracks[0].mode;
-      const newMode = currentMode === 'showing' ? 'hidden' : 'showing';
-      textTracks[0].mode = newMode;
-      console.log(`Subtitle mode changed from ${currentMode} to ${newMode}`);
-    } else {
-      console.log('No text tracks available for toggling');
-      // Try to setup subtitles if they're not loaded
-      if (transcription && transcription.has_vtt) {
-        setupSubtitles();
-      }
-    }
-  };
-
   return (
     <div className={`bg-black rounded-lg overflow-hidden shadow-lg ${className}`}>
       {getPlayerContent()}
@@ -480,128 +346,9 @@ export const VideoPlayer = ({
           <div className="flex items-center">
             <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
             <span>Loading media player...</span>
-            <button
-              onClick={() => {
-                console.log('Force showing player');
-                setIsLoading(false);
-              }}
-              className="ml-4 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-            >
-              Force Show
-            </button>
           </div>
         </div>
       )}
-
-      {/* Debug controls - always show */}
-      <div className="p-4 bg-gray-800 text-white text-sm">
-          <button
-            onClick={toggleSubtitles}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs mr-2"
-          >
-            Toggle Subtitles
-          </button>
-          <button
-            onClick={() => {
-              if (transcription && transcription.has_vtt) {
-                console.log('Manually triggering subtitle setup');
-                setupSubtitles();
-              }
-            }}
-            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs mr-2"
-          >
-            Reload Subtitles
-          </button>
-          <button
-            onClick={() => {
-              console.log('Manually triggering media source setup');
-              setupMediaSource();
-            }}
-            className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-xs mr-2"
-          >
-            Reload Media
-          </button>
-          <button
-            onClick={() => {
-              const mediaUrl = src || mediaAPI.getMediaFileUrl(mediaFile.id);
-              console.log('Testing HTML5 video with URL:', mediaUrl);
-
-              // Create a simple HTML5 video element for testing
-              const testVideo = document.createElement('video');
-              testVideo.src = mediaUrl;
-              testVideo.controls = true;
-              testVideo.style.width = '100%';
-              testVideo.style.maxWidth = '400px';
-              testVideo.style.border = '2px solid red';
-
-              // Add it to the page temporarily
-              const container = document.createElement('div');
-              container.style.position = 'fixed';
-              container.style.top = '10px';
-              container.style.right = '10px';
-              container.style.zIndex = '9999';
-              container.style.background = 'white';
-              container.style.padding = '10px';
-              container.appendChild(testVideo);
-
-              const closeBtn = document.createElement('button');
-              closeBtn.textContent = 'Close Test';
-              closeBtn.onclick = () => document.body.removeChild(container);
-              closeBtn.style.display = 'block';
-              closeBtn.style.marginTop = '5px';
-              container.appendChild(closeBtn);
-
-              document.body.appendChild(container);
-            }}
-            className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs mr-2"
-          >
-            Test HTML5 Video
-          </button>
-          <button
-            onClick={() => {
-              console.log('Manually triggering Video.js initialization');
-              console.log('Current state:', {
-                hasVideoRef: !!videoRef.current,
-                hasPlayerRef: !!playerRef.current,
-                videoElement: videoRef.current
-              });
-
-              // Force re-initialization
-              if (playerRef.current && !playerRef.current.isDisposed()) {
-                console.log('Disposing existing player');
-                playerRef.current.dispose();
-                playerRef.current = null;
-              }
-
-              // Try to initialize again
-              setTimeout(() => {
-                if (videoRef.current && !playerRef.current) {
-                  console.log('Attempting manual Video.js initialization');
-                  try {
-                    const player = videojs(videoRef.current, {
-                      controls: true,
-                      responsive: true,
-                      fluid: true,
-                    }, () => {
-                      console.log('Manual Video.js player ready!');
-                      setIsLoading(false);
-                      setupMediaSource();
-                    });
-                    playerRef.current = player;
-                  } catch (error) {
-                    console.error('Manual initialization failed:', error);
-                  }
-                }
-              }, 100);
-            }}
-            className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs mr-2"
-          >
-            Init Video.js
-          </button>
-          <span className="ml-4 text-gray-300">
-            VTT Available: {transcription?.has_vtt ? 'Yes' : 'No'}
-          </span>
-        </div>
     </div>
   );
 };

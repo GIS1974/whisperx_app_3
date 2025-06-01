@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './styles/esl-player.css';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -13,7 +14,6 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UploadPage } from './pages/UploadPage';
 import { PlayerPage } from './pages/PlayerPage';
 import { TestPlayerPage } from './pages/TestPlayerPage';
-import { SimpleVideoTest } from './components/SimpleVideoTest';
 import { BasicVideoTest } from './components/BasicVideoTest';
 
 function App() {
@@ -34,7 +34,6 @@ function App() {
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/player/:fileId" element={<PlayerPage />} />
               <Route path="/test-player" element={<TestPlayerPage />} />
-              <Route path="/simple-video-test" element={<SimpleVideoTest />} />
               <Route path="/basic-video-test" element={<BasicVideoTest />} />
 
               {/* Default redirect */}

@@ -4,8 +4,7 @@ import { toast } from 'react-toastify';
 import { mediaAPI, transcriptionAPI } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { DebugPanel } from '../components/DebugPanel';
-import { VideoPlayer } from '../components/VideoPlayer';
-import { ESLControls } from '../components/ESLControls';
+import { ESLVideoPlayer } from '../components/ESLVideoPlayer';
 import { TranscriptPanel } from '../components/TranscriptPanel';
 
 export const PlayerPage = () => {
@@ -19,16 +18,9 @@ export const PlayerPage = () => {
   const [error, setError] = useState(null);
   const [segments, setSegments] = useState([]);
 
-  // Video player state
+  // Video player state (simplified for transcript panel)
   const playerRef = useRef(null);
-  const [player, setPlayer] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  // ESL features state
-  const [listenRepeatMode, setListenRepeatMode] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-  const [audioMuted, setAudioMuted] = useState(false);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
   const [currentSegment, setCurrentSegment] = useState(null);
 
@@ -122,85 +114,13 @@ export const PlayerPage = () => {
     }
   };
 
-  // Player event handlers
-  const handlePlayerReady = (playerInstance) => {
-    setPlayer(playerInstance);
-    playerRef.current = playerInstance;
-
-    // Set up player event listeners
-    playerInstance.on('timeupdate', handleTimeUpdate);
-    playerInstance.on('loadedmetadata', () => {
-      setDuration(playerInstance.duration());
-    });
-
-    // Apply initial settings
-    playerInstance.playbackRate(playbackSpeed);
-    playerInstance.muted(audioMuted);
-  };
-
-  const handleTimeUpdate = () => {
-    if (!playerRef.current || segments.length === 0) return;
-
-    const time = playerRef.current.currentTime();
-    setCurrentTime(time);
-
-    // Find active segment based on current time
-    const activeIndex = segments.findIndex(segment =>
-      time >= segment.start && time <= segment.end
-    );
-
-    if (activeIndex !== -1 && activeIndex !== activeSegmentIndex) {
-      setActiveSegmentIndex(activeIndex);
-      setCurrentSegment(segments[activeIndex]);
-
-      // Handle listen-and-repeat mode
-      if (listenRepeatMode && activeIndex > activeSegmentIndex) {
-        // Pause at the end of the current segment
-        const segment = segments[activeIndex];
-        setTimeout(() => {
-          if (playerRef.current && playerRef.current.currentTime() >= segment.end - 0.1) {
-            playerRef.current.pause();
-          }
-        }, (segment.end - time) * 1000);
-      }
-    }
-  };
-
-  // ESL control handlers
-  const handleListenRepeatToggle = (enabled) => {
-    setListenRepeatMode(enabled);
-  };
-
-  const handleSpeedChange = (speed) => {
-    setPlaybackSpeed(speed);
-    if (playerRef.current) {
-      playerRef.current.playbackRate(speed);
-    }
-  };
-
-  const handleMuteToggle = (muted) => {
-    setAudioMuted(muted);
-    if (playerRef.current) {
-      playerRef.current.muted(muted);
-    }
-  };
-
-  const handleReplaySegment = () => {
-    if (currentSegment && playerRef.current) {
-      playerRef.current.currentTime(currentSegment.start);
-      playerRef.current.play();
-    }
-  };
-
-  const handlePlayNextSegment = () => {
-    if (activeSegmentIndex < segments.length - 1 && playerRef.current) {
-      const nextSegment = segments[activeSegmentIndex + 1];
-      playerRef.current.currentTime(nextSegment.start);
-      playerRef.current.play();
-    }
-  };
-
+  // Handler for transcript panel navigation
   const handleSegmentClick = (segment) => {
+    // Update local state for transcript panel highlighting
+    setActiveSegmentIndex(segments.findIndex(s => s.start === segment.start));
+    setCurrentSegment(segment);
+
+    // Navigate to segment (this will be handled by ESLVideoPlayer's internal player)
     if (playerRef.current) {
       playerRef.current.currentTime(segment.start);
       playerRef.current.play();
@@ -343,40 +263,25 @@ export const PlayerPage = () => {
         </div>
       )}
 
-      {/* Video Player and ESL Features */}
+      {/* ESL Video Player */}
       {mediaFile.is_completed && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Video Player Column */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Video Player */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <VideoPlayer
-                mediaFile={mediaFile}
-                transcription={transcription}
-                subtitles={segments}
-                onReady={handlePlayerReady}
-                onTimeUpdate={handleTimeUpdate}
-                className="w-full"
-              />
-            </div>
-
-            {/* ESL Controls - Only show when transcription is available */}
-            {transcription && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <ESLControls
-                  listenRepeatMode={listenRepeatMode}
-                  playbackSpeed={playbackSpeed}
-                  audioMuted={audioMuted}
-                  currentSegment={currentSegment}
-                  onListenRepeatToggle={handleListenRepeatToggle}
-                  onSpeedChange={handleSpeedChange}
-                  onMuteToggle={handleMuteToggle}
-                  onReplaySegment={handleReplaySegment}
-                  onPlayNextSegment={handlePlayNextSegment}
-                  canPlayNext={activeSegmentIndex < segments.length - 1}
-                />
-              </div>
-            )}
+            {/* ESL Video Player with integrated controls */}
+            <ESLVideoPlayer
+              mediaFile={mediaFile}
+              transcription={transcription}
+              onProgress={(segmentIndex, segment) => {
+                setActiveSegmentIndex(segmentIndex);
+                setCurrentSegment(segment);
+              }}
+              onSegmentComplete={(segmentIndex, segment) => {
+                // Handle segment completion for analytics or progress tracking
+                console.log('Segment completed:', segmentIndex, segment);
+              }}
+              className="w-full"
+            />
 
             {/* Download Options - Only show when transcription is available */}
             {transcription && (
@@ -433,6 +338,15 @@ export const PlayerPage = () => {
                   activeSegmentIndex={activeSegmentIndex}
                   currentTime={currentTime}
                   onSegmentClick={handleSegmentClick}
+                  onWordClick={(time, word) => {
+                    // Navigate to specific word timestamp
+                    if (playerRef.current) {
+                      playerRef.current.currentTime(time);
+                      playerRef.current.play();
+                    }
+                  }}
+                  showSearch={true}
+                  showStats={true}
                 />
               ) : (
                 <div className="text-center py-8">
