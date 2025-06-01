@@ -184,6 +184,7 @@ export const VideoPlayer = ({
         }
         playerRef.current = null;
       }
+    };
   }, []); // Empty dependency array - only run once on mount
 
   const setupMediaSource = () => {
