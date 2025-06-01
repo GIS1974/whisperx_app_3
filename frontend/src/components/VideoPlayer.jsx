@@ -123,11 +123,15 @@ export const VideoPlayer = ({
       }
     };
 
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(initializePlayer, 100);
+    // Try multiple times with increasing delays to ensure DOM is ready
+    const timeoutId1 = setTimeout(initializePlayer, 100);
+    const timeoutId2 = setTimeout(initializePlayer, 500);
+    const timeoutId3 = setTimeout(initializePlayer, 1000);
 
     return () => {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId1);
+      clearTimeout(timeoutId2);
+      clearTimeout(timeoutId3);
       // Cleanup
       if (playerRef.current && !playerRef.current.isDisposed()) {
         try {
