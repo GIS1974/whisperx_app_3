@@ -134,14 +134,22 @@ export const VideoPlayer = ({
 
     // Try to initialize immediately
     if (initializePlayer()) {
+      console.log('Video.js initialization successful immediately');
       return; // Success, no need for retries
     }
 
     // If immediate initialization failed, try with delays
     let attempts = 0;
     const maxAttempts = 10;
+    let retryTimeoutId;
 
     const retryInitialization = () => {
+      // Check if player was already initialized (maybe by another effect run)
+      if (playerRef.current) {
+        console.log('Video.js player already exists, stopping retry attempts');
+        return;
+      }
+
       attempts++;
       console.log(`Video.js initialization attempt ${attempts}/${maxAttempts}`);
 
@@ -151,7 +159,7 @@ export const VideoPlayer = ({
       }
 
       if (attempts < maxAttempts) {
-        setTimeout(retryInitialization, 200 * attempts); // Increasing delay
+        retryTimeoutId = setTimeout(retryInitialization, 200 * attempts); // Increasing delay
       } else {
         console.warn('Video.js initialization failed after', maxAttempts, 'attempts');
         setPlayerError('Failed to initialize video player');
@@ -160,10 +168,14 @@ export const VideoPlayer = ({
     };
 
     // Start retry process
-    setTimeout(retryInitialization, 100);
+    retryTimeoutId = setTimeout(retryInitialization, 100);
 
+    // Cleanup function to clear retry timeout
     return () => {
-      // Cleanup
+      if (retryTimeoutId) {
+        clearTimeout(retryTimeoutId);
+      }
+      // Cleanup player
       if (playerRef.current && !playerRef.current.isDisposed()) {
         try {
           playerRef.current.dispose();
@@ -172,7 +184,6 @@ export const VideoPlayer = ({
         }
         playerRef.current = null;
       }
-    };
   }, []); // Empty dependency array - only run once on mount
 
   const setupMediaSource = () => {
