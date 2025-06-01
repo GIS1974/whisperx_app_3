@@ -7,9 +7,10 @@ export const ESLControls = ({
   onMuteToggle,
   onReplaySegment,
   onPlayNextSegment,
-  canReplay,
+  currentSegment,
   canPlayNext,
 }) => {
+  const canReplay = currentSegment !== null;
   const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   return (
@@ -82,7 +83,7 @@ export const ESLControls = ({
             <p className="text-sm text-gray-600">Practice shadowing without original audio</p>
           </div>
           <button
-            onClick={onMuteToggle}
+            onClick={() => onMuteToggle(!audioMuted)}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               audioMuted ? 'bg-red-600' : 'bg-gray-200'
             }`}

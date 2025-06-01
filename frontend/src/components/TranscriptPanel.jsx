@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { formatTimestamp } from '../utils/formatters';
 import { LoadingSpinner } from './LoadingSpinner';
 
-export const TranscriptPanel = ({ segments, activeSegmentIndex, onSegmentClick, loading }) => {
+export const TranscriptPanel = ({ segments, activeSegmentIndex, currentTime, onSegmentClick, loading }) => {
   const activeSegmentRef = useRef(null);
 
   // Auto-scroll to active segment
