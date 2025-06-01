@@ -1,59 +1,41 @@
-import re
 from datetime import timedelta
 
 
 class VTTGenerator:
-    """Generator for WebVTT subtitle files with word-level timing."""
-    
+    """Generator for WebVTT subtitle files with segment-level timing."""
+
     @staticmethod
     def generate(whisperx_output, output_path):
         """
-        Generate VTT file from WhisperX output.
+        Generate VTT file from WhisperX output using segment-level timing.
+        This creates proper subtitles that work well with video players.
         """
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write("WEBVTT\n\n")
-            
+
             if not isinstance(whisperx_output, dict) or 'segments' not in whisperx_output:
                 return
-            
+
             segments = whisperx_output['segments']
             cue_id = 1
-            
+
             for segment in segments:
-                if 'words' in segment and segment['words']:
-                    # Generate word-level cues for precise highlighting
-                    for word_data in segment['words']:
-                        if 'start' in word_data and 'end' in word_data and 'word' in word_data:
-                            start_time = VTTGenerator._format_timestamp(word_data['start'])
-                            end_time = VTTGenerator._format_timestamp(word_data['end'])
-                            word_text = word_data['word'].strip()
-                            
-                            if word_text:
-                                # Add speaker label if available
-                                speaker_label = ""
-                                if 'speaker' in segment:
-                                    speaker_label = f"<v {segment['speaker']}>"
-                                
-                                f.write(f"{cue_id}\n")
-                                f.write(f"{start_time} --> {end_time}\n")
-                                f.write(f"{speaker_label}<c.word-highlight>{word_text}</c>\n\n")
-                                cue_id += 1
-                else:
-                    # Fallback: segment-level cues
-                    if 'start' in segment and 'end' in segment and 'text' in segment:
-                        start_time = VTTGenerator._format_timestamp(segment['start'])
-                        end_time = VTTGenerator._format_timestamp(segment['end'])
-                        text = segment['text'].strip()
-                        
-                        if text:
-                            speaker_label = ""
-                            if 'speaker' in segment:
-                                speaker_label = f"<v {segment['speaker']}>"
-                            
-                            f.write(f"{cue_id}\n")
-                            f.write(f"{start_time} --> {end_time}\n")
-                            f.write(f"{speaker_label}{text}\n\n")
-                            cue_id += 1
+                # Use segment-level timing for proper subtitle display
+                if 'start' in segment and 'end' in segment and 'text' in segment:
+                    start_time = VTTGenerator._format_timestamp(segment['start'])
+                    end_time = VTTGenerator._format_timestamp(segment['end'])
+                    text = segment['text'].strip()
+
+                    if text:
+                        # Add speaker label if available
+                        speaker_label = ""
+                        if 'speaker' in segment:
+                            speaker_label = f"<v {segment['speaker']}>"
+
+                        f.write(f"{cue_id}\n")
+                        f.write(f"{start_time} --> {end_time}\n")
+                        f.write(f"{speaker_label}{text}\n\n")
+                        cue_id += 1
     
     @staticmethod
     def _format_timestamp(seconds):
@@ -65,6 +47,73 @@ class VTTGenerator:
         secs = total_seconds % 60
         milliseconds = int((seconds - total_seconds) * 1000)
         
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{milliseconds:03d}"
+
+
+class WordLevelVTTGenerator:
+    """Generator for WebVTT subtitle files with word-level timing for advanced ESL features."""
+
+    @staticmethod
+    def generate(whisperx_output, output_path):
+        """
+        Generate VTT file from WhisperX output with word-level timing.
+        This is used for advanced ESL features like word-by-word highlighting.
+        """
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write("WEBVTT\n\n")
+
+            if not isinstance(whisperx_output, dict) or 'segments' not in whisperx_output:
+                return
+
+            segments = whisperx_output['segments']
+            cue_id = 1
+
+            for segment in segments:
+                if 'words' in segment and segment['words']:
+                    # Generate word-level cues for precise highlighting
+                    for word_data in segment['words']:
+                        if 'start' in word_data and 'end' in word_data and 'word' in word_data:
+                            start_time = WordLevelVTTGenerator._format_timestamp(word_data['start'])
+                            end_time = WordLevelVTTGenerator._format_timestamp(word_data['end'])
+                            word_text = word_data['word'].strip()
+
+                            if word_text:
+                                # Add speaker label if available
+                                speaker_label = ""
+                                if 'speaker' in segment:
+                                    speaker_label = f"<v {segment['speaker']}>"
+
+                                f.write(f"{cue_id}\n")
+                                f.write(f"{start_time} --> {end_time}\n")
+                                f.write(f"{speaker_label}<c.word-highlight>{word_text}</c>\n\n")
+                                cue_id += 1
+                else:
+                    # Fallback: segment-level cues
+                    if 'start' in segment and 'end' in segment and 'text' in segment:
+                        start_time = WordLevelVTTGenerator._format_timestamp(segment['start'])
+                        end_time = WordLevelVTTGenerator._format_timestamp(segment['end'])
+                        text = segment['text'].strip()
+
+                        if text:
+                            speaker_label = ""
+                            if 'speaker' in segment:
+                                speaker_label = f"<v {segment['speaker']}>"
+
+                            f.write(f"{cue_id}\n")
+                            f.write(f"{start_time} --> {end_time}\n")
+                            f.write(f"{speaker_label}{text}\n\n")
+                            cue_id += 1
+
+    @staticmethod
+    def _format_timestamp(seconds):
+        """Format timestamp for VTT format (HH:MM:SS.mmm)."""
+        td = timedelta(seconds=seconds)
+        total_seconds = int(td.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        secs = total_seconds % 60
+        milliseconds = int((seconds - total_seconds) * 1000)
+
         return f"{hours:02d}:{minutes:02d}:{secs:02d}.{milliseconds:03d}"
 
 
