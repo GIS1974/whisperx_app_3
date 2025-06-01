@@ -3,7 +3,15 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { mediaAPI, transcriptionAPI } from '../services/api';
 
-export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
+export const VideoPlayer = ({
+  src,
+  subtitles = [],
+  onReady,
+  onTimeUpdate,
+  className = '',
+  mediaFile = null,
+  transcription = null
+}) => {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
   const [playerError, setPlayerError] = useState(null);
@@ -41,10 +49,15 @@ export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
         playerRef.current = videojs(videoElement, playerOptions, () => {
           console.log('Video.js player ready');
           setIsLoading(false);
-          if (onPlayerReady) {
-            onPlayerReady(playerRef.current);
+          if (onReady) {
+            onReady(playerRef.current);
           }
         });
+
+        // Set up time update handler
+        if (onTimeUpdate) {
+          playerRef.current.on('timeupdate', onTimeUpdate);
+        }
 
         // Set up error handling
         playerRef.current.on('error', (error) => {
@@ -62,6 +75,8 @@ export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
         // Set up subtitles if available
         if (transcription && transcription.has_vtt) {
           setupSubtitles();
+        } else if (subtitles && subtitles.length > 0) {
+          setupInlineSubtitles();
         }
       } catch (error) {
         console.error('Error initializing Video.js player:', error);
@@ -85,18 +100,24 @@ export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
         playerRef.current = null;
       }
     };
-  }, [mediaFile, transcription]);
+  }, [src, subtitles, mediaFile, transcription]);
 
   const setupMediaSource = () => {
-    if (!playerRef.current || !mediaFile) return;
+    if (!playerRef.current) return;
 
     try {
-      const mediaUrl = mediaAPI.getMediaFileUrl(mediaFile.id);
-      console.log('Setting up media source:', { mediaUrl, mimeType: mediaFile.mime_type });
+      // Use src prop if provided, otherwise fall back to mediaFile
+      const mediaUrl = src || (mediaFile ? mediaAPI.getMediaFileUrl(mediaFile.id) : null);
+      if (!mediaUrl) {
+        console.warn('No media source available');
+        return;
+      }
+
+      console.log('Setting up media source:', { mediaUrl });
 
       const sourceOptions = {
         src: mediaUrl,
-        type: mediaFile.mime_type,
+        type: mediaFile?.mime_type || 'video/mp4', // Default to mp4 if no mime type
       };
 
       playerRef.current.src(sourceOptions);
@@ -148,6 +169,59 @@ export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
         textTracks[0].mode = 'showing';
       }
     }, 100);
+  };
+
+  const setupInlineSubtitles = () => {
+    if (!playerRef.current || !subtitles || subtitles.length === 0) return;
+
+    // Convert segments to VTT format and create blob URL
+    const vttContent = convertSegmentsToVTT(subtitles);
+    const blob = new Blob([vttContent], { type: 'text/vtt' });
+    const vttUrl = URL.createObjectURL(blob);
+
+    // Remove existing text tracks
+    const existingTracks = playerRef.current.textTracks();
+    for (let i = existingTracks.length - 1; i >= 0; i--) {
+      playerRef.current.removeRemoteTextTrack(existingTracks[i]);
+    }
+
+    // Add VTT subtitle track
+    playerRef.current.addRemoteTextTrack({
+      kind: 'subtitles',
+      src: vttUrl,
+      srclang: 'en',
+      label: 'Transcription',
+      default: true,
+    }, false);
+
+    // Enable subtitles by default
+    setTimeout(() => {
+      const textTracks = playerRef.current.textTracks();
+      if (textTracks.length > 0) {
+        textTracks[0].mode = 'showing';
+      }
+    }, 100);
+  };
+
+  const convertSegmentsToVTT = (segments) => {
+    let vtt = 'WEBVTT\n\n';
+
+    segments.forEach((segment, index) => {
+      const startTime = formatTime(segment.start);
+      const endTime = formatTime(segment.end);
+      vtt += `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}\n\n`;
+    });
+
+    return vtt;
+  };
+
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
   };
 
   // Update subtitles when transcription becomes available
@@ -242,7 +316,7 @@ export const VideoPlayer = ({ mediaFile, transcription, onPlayerReady }) => {
   }
 
   return (
-    <div className="bg-black rounded-lg overflow-hidden shadow-lg">
+    <div className={`bg-black rounded-lg overflow-hidden shadow-lg ${className}`}>
       {getPlayerContent()}
     </div>
   );

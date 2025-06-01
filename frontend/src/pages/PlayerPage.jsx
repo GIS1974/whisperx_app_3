@@ -1,19 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { mediaAPI, transcriptionAPI } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { DebugPanel } from '../components/DebugPanel';
+import { VideoPlayer } from '../components/VideoPlayer';
+import { ESLControls } from '../components/ESLControls';
+import { TranscriptPanel } from '../components/TranscriptPanel';
 
 export const PlayerPage = () => {
   const { fileId } = useParams();
   const navigate = useNavigate();
 
+  // Basic state
   const [mediaFile, setMediaFile] = useState(null);
   const [transcription, setTranscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [segments, setSegments] = useState([]);
+
+  // Video player state
+  const playerRef = useRef(null);
+  const [player, setPlayer] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  // ESL features state
+  const [listenRepeatMode, setListenRepeatMode] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
+  const [currentSegment, setCurrentSegment] = useState(null);
 
   useEffect(() => {
     fetchMediaFile();
@@ -102,6 +119,91 @@ export const PlayerPage = () => {
     } catch (error) {
       console.error(`Error downloading ${format}:`, error);
       toast.error(`Failed to download ${format.toUpperCase()} file`);
+    }
+  };
+
+  // Player event handlers
+  const handlePlayerReady = (playerInstance) => {
+    setPlayer(playerInstance);
+    playerRef.current = playerInstance;
+
+    // Set up player event listeners
+    playerInstance.on('timeupdate', handleTimeUpdate);
+    playerInstance.on('loadedmetadata', () => {
+      setDuration(playerInstance.duration());
+    });
+
+    // Apply initial settings
+    playerInstance.playbackRate(playbackSpeed);
+    playerInstance.muted(audioMuted);
+  };
+
+  const handleTimeUpdate = () => {
+    if (!playerRef.current || segments.length === 0) return;
+
+    const time = playerRef.current.currentTime();
+    setCurrentTime(time);
+
+    // Find active segment based on current time
+    const activeIndex = segments.findIndex(segment =>
+      time >= segment.start && time <= segment.end
+    );
+
+    if (activeIndex !== -1 && activeIndex !== activeSegmentIndex) {
+      setActiveSegmentIndex(activeIndex);
+      setCurrentSegment(segments[activeIndex]);
+
+      // Handle listen-and-repeat mode
+      if (listenRepeatMode && activeIndex > activeSegmentIndex) {
+        // Pause at the end of the current segment
+        const segment = segments[activeIndex];
+        setTimeout(() => {
+          if (playerRef.current && playerRef.current.currentTime() >= segment.end - 0.1) {
+            playerRef.current.pause();
+          }
+        }, (segment.end - time) * 1000);
+      }
+    }
+  };
+
+  // ESL control handlers
+  const handleListenRepeatToggle = (enabled) => {
+    setListenRepeatMode(enabled);
+  };
+
+  const handleSpeedChange = (speed) => {
+    setPlaybackSpeed(speed);
+    if (playerRef.current) {
+      playerRef.current.playbackRate(speed);
+    }
+  };
+
+  const handleMuteToggle = (muted) => {
+    setAudioMuted(muted);
+    if (playerRef.current) {
+      playerRef.current.muted(muted);
+    }
+  };
+
+  const handleReplaySegment = () => {
+    if (currentSegment && playerRef.current) {
+      playerRef.current.currentTime(currentSegment.start);
+      playerRef.current.play();
+    }
+  };
+
+  const handlePlayNextSegment = () => {
+    if (activeSegmentIndex < segments.length - 1 && playerRef.current) {
+      const nextSegment = segments[activeSegmentIndex + 1];
+      playerRef.current.currentTime(nextSegment.start);
+      playerRef.current.play();
+    }
+  };
+
+  const handleSegmentClick = (segment) => {
+    if (playerRef.current) {
+      playerRef.current.currentTime(segment.start);
+      playerRef.current.play();
     }
   };
 
@@ -241,59 +343,86 @@ export const PlayerPage = () => {
         </div>
       )}
 
-      {/* Transcription Results */}
+      {/* Video Player and ESL Features */}
       {mediaFile.is_completed && transcription && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Video Player Column */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Video Player */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <VideoPlayer
+                mediaFile={mediaFile}
+                subtitles={segments}
+                onReady={handlePlayerReady}
+                onTimeUpdate={handleTimeUpdate}
+                className="w-full"
+              />
+            </div>
+
+            {/* ESL Controls */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <ESLControls
+                listenRepeatMode={listenRepeatMode}
+                playbackSpeed={playbackSpeed}
+                audioMuted={audioMuted}
+                currentSegment={currentSegment}
+                onListenRepeatToggle={handleListenRepeatToggle}
+                onSpeedChange={handleSpeedChange}
+                onMuteToggle={handleMuteToggle}
+                onReplaySegment={handleReplaySegment}
+                onPlayNextSegment={handlePlayNextSegment}
+                canPlayNext={activeSegmentIndex < segments.length - 1}
+              />
+            </div>
+
+            {/* Download Options */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Transcript</h3>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => downloadSubtitle('vtt')}
+                  className="btn-primary text-sm"
+                >
+                  Download VTT
+                </button>
+                <button
+                  onClick={() => downloadSubtitle('srt')}
+                  className="btn-primary text-sm"
+                >
+                  Download SRT
+                </button>
+                <button
+                  onClick={() => downloadSubtitle('txt')}
+                  className="btn-primary text-sm"
+                >
+                  Download TXT
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                VTT: WebVTT format for web players • SRT: SubRip format for video players • TXT: Plain text format
+              </p>
+            </div>
+          </div>
+
+          {/* Transcript Panel Column */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
+              <TranscriptPanel
+                segments={segments}
+                activeSegmentIndex={activeSegmentIndex}
+                currentTime={currentTime}
+                onSegmentClick={handleSegmentClick}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback for incomplete transcription */}
+      {mediaFile.is_completed && !transcription && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Transcription Results</h2>
-
-          {/* Transcript Text */}
-          <div className="mb-6">
-            <h3 className="text-md font-medium text-gray-700 mb-3">Transcript Text</h3>
-            <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-              {segments.length > 0 ? (
-                <div className="space-y-2">
-                  {segments.map((segment, index) => (
-                    <div key={index} className="text-sm">
-                      <span className="text-gray-500 text-xs">
-                        [{Math.floor(segment.start / 60)}:{(segment.start % 60).toFixed(1).padStart(4, '0')} - {Math.floor(segment.end / 60)}:{(segment.end % 60).toFixed(1).padStart(4, '0')}]
-                      </span>
-                      <span className="ml-2 text-gray-900">{segment.text}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">No transcript segments available</p>
-              )}
-            </div>
-          </div>
-
-          {/* Download Options */}
-          <div>
-            <h3 className="text-md font-medium text-gray-700 mb-3">Download Transcript</h3>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => downloadSubtitle('vtt')}
-                className="btn-primary text-sm"
-              >
-                Download VTT
-              </button>
-              <button
-                onClick={() => downloadSubtitle('srt')}
-                className="btn-primary text-sm"
-              >
-                Download SRT
-              </button>
-              <button
-                onClick={() => downloadSubtitle('txt')}
-                className="btn-primary text-sm"
-              >
-                Download TXT
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              VTT: WebVTT format for web players • SRT: SubRip format for video players • TXT: Plain text format
-            </p>
-          </div>
+          <p className="text-gray-500 text-center py-8">Transcription data not available</p>
         </div>
       )}
 
