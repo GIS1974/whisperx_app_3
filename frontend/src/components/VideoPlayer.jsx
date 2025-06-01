@@ -17,15 +17,21 @@ export const VideoPlayer = ({
   const [playerError, setPlayerError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Separate effect to initialize Video.js when video element becomes available
   useEffect(() => {
-    // Initialize Video.js player with simplified approach like the working test
+    console.log('VideoPlayer useEffect running, checking video element...');
+    console.log('videoRef.current:', videoRef.current);
+    console.log('playerRef.current:', playerRef.current);
+
     const initializePlayer = () => {
+      console.log('initializePlayer called, checking conditions:', {
+        hasVideoRef: !!videoRef.current,
+        hasPlayerRef: !!playerRef.current,
+        videoElement: videoRef.current
+      });
+
       if (!videoRef.current || playerRef.current) {
-        console.log('Skipping player init:', {
-          hasVideoRef: !!videoRef.current,
-          hasPlayerRef: !!playerRef.current
-        });
-        return;
+        return false; // Return false to indicate initialization didn't happen
       }
 
       console.log('Initializing Video.js player...', {
@@ -116,22 +122,47 @@ export const VideoPlayer = ({
           console.log('Video.js: canplaythrough event');
         });
 
+        return true; // Return true to indicate successful initialization
+
       } catch (error) {
         console.error('Error initializing Video.js player:', error);
         setPlayerError(`Player initialization error: ${error.message}`);
         setIsLoading(false);
+        return false;
       }
     };
 
-    // Try multiple times with increasing delays to ensure DOM is ready
-    const timeoutId1 = setTimeout(initializePlayer, 100);
-    const timeoutId2 = setTimeout(initializePlayer, 500);
-    const timeoutId3 = setTimeout(initializePlayer, 1000);
+    // Try to initialize immediately
+    if (initializePlayer()) {
+      return; // Success, no need for retries
+    }
+
+    // If immediate initialization failed, try with delays
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    const retryInitialization = () => {
+      attempts++;
+      console.log(`Video.js initialization attempt ${attempts}/${maxAttempts}`);
+
+      if (initializePlayer()) {
+        console.log('Video.js initialization successful on attempt', attempts);
+        return; // Success
+      }
+
+      if (attempts < maxAttempts) {
+        setTimeout(retryInitialization, 200 * attempts); // Increasing delay
+      } else {
+        console.warn('Video.js initialization failed after', maxAttempts, 'attempts');
+        setPlayerError('Failed to initialize video player');
+        setIsLoading(false);
+      }
+    };
+
+    // Start retry process
+    setTimeout(retryInitialization, 100);
 
     return () => {
-      clearTimeout(timeoutId1);
-      clearTimeout(timeoutId2);
-      clearTimeout(timeoutId3);
       // Cleanup
       if (playerRef.current && !playerRef.current.isDisposed()) {
         try {
@@ -142,7 +173,7 @@ export const VideoPlayer = ({
         playerRef.current = null;
       }
     };
-  }, [src, subtitles, mediaFile, transcription]);
+  }, []); // Empty dependency array - only run once on mount
 
   const setupMediaSource = () => {
     console.log('setupMediaSource called with:', {
@@ -393,59 +424,7 @@ export const VideoPlayer = ({
     );
   };
 
-  // Show error state
-  if (playerError) {
-    return (
-      <div className="bg-gray-900 rounded-lg overflow-hidden p-8 text-center">
-        <div className="text-red-400 mb-4">
-          <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-xl font-medium text-white mb-2">Media Loading Error</h3>
-          <p className="text-gray-300 text-sm">{playerError}</p>
-        </div>
-        <div className="text-gray-400 text-sm">
-          <p>Please check:</p>
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            <li>Backend server is running</li>
-            <li>Media file exists and is accessible</li>
-            <li>File format is supported</li>
-          </ul>
-        </div>
-      </div>
-    );
-  }
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="bg-gray-900 rounded-lg overflow-hidden p-8 text-center">
-        <div className="text-white">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading media player...</p>
-          <button
-            onClick={() => {
-              console.log('Force showing player');
-              setIsLoading(false);
-              // Try to setup media source after a short delay
-              setTimeout(() => {
-                if (playerRef.current && mediaFile) {
-                  console.log('Manually triggering media source setup');
-                  setupMediaSource();
-                  if (transcription && transcription.has_vtt) {
-                    setupSubtitles();
-                  }
-                }
-              }, 500);
-            }}
-            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
-          >
-            Force Show Player
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const toggleSubtitles = () => {
     if (!playerRef.current) return;
@@ -470,9 +449,40 @@ export const VideoPlayer = ({
   return (
     <div className={`bg-black rounded-lg overflow-hidden shadow-lg ${className}`}>
       {getPlayerContent()}
-      {/* Debug subtitle controls */}
-      {!isLoading && !playerError && (
-        <div className="p-4 bg-gray-800 text-white text-sm">
+
+      {/* Show error overlay */}
+      {playerError && (
+        <div className="p-4 bg-red-900 text-white text-sm">
+          <div className="flex items-center mb-2">
+            <svg className="w-5 h-5 mr-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-medium">Error: {playerError}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Show loading overlay */}
+      {isLoading && (
+        <div className="p-4 bg-blue-900 text-white text-sm">
+          <div className="flex items-center">
+            <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full mr-2"></div>
+            <span>Loading media player...</span>
+            <button
+              onClick={() => {
+                console.log('Force showing player');
+                setIsLoading(false);
+              }}
+              className="ml-4 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+            >
+              Force Show
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Debug controls - always show */}
+      <div className="p-4 bg-gray-800 text-white text-sm">
           <button
             onClick={toggleSubtitles}
             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs mr-2"
@@ -580,7 +590,6 @@ export const VideoPlayer = ({
             VTT Available: {transcription?.has_vtt ? 'Yes' : 'No'}
           </span>
         </div>
-      )}
     </div>
   );
 };
