@@ -37,23 +37,28 @@
 }
 
 .transcript-segment {
-  padding: 12px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  cursor: pointer;
+  margin-bottom: 4px;
   transition: all 0.2s ease;
-  border-left: 4px solid transparent;
 }
 
-.transcript-segment:hover {
-  background-color: #f7fafc;
-  border-left-color: #e2e8f0;
+/* Updated styles for the new structure with padding and hover on the inner div */
+.transcript-segment > div {
+  transition: all 0.2s ease;
 }
 
-.transcript-segment.active {
-  background-color: #ebf8ff;
-  border-left-color: #3182ce;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.transcript-segment > div:hover {
+  background-color: #f8fafc;
+}
+
+/* Active segment styling */
+.transcript-segment > div.bg-blue-50 {
+  background-color: #eff6ff !important;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Ensure proper spacing and visual hierarchy */
+.transcript-segment .text-xs {
+  min-width: 60px;
 }
 
 .word-highlight {

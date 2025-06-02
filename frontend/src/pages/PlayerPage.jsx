@@ -20,6 +20,7 @@ export const PlayerPage = () => {
 
   // Video player state (simplified for transcript panel)
   const playerRef = useRef(null);
+  const [eslVideoPlayerAPI, setEslVideoPlayerAPI] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
   const [currentSegment, setCurrentSegment] = useState(null);
@@ -117,14 +118,20 @@ export const PlayerPage = () => {
   // Handler for transcript panel navigation
   const handleSegmentClick = (segment) => {
     // Update local state for transcript panel highlighting
-    setActiveSegmentIndex(segments.findIndex(s => s.start === segment.start));
+    const segmentIndex = segments.findIndex(s => s.start === segment.start);
+    setActiveSegmentIndex(segmentIndex);
     setCurrentSegment(segment);
 
-    // Navigate to segment (this will be handled by ESLVideoPlayer's internal player)
-    if (playerRef.current) {
-      playerRef.current.currentTime(segment.start);
-      playerRef.current.play();
+    // Trigger playback through ESLVideoPlayer
+    if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
+      eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
     }
+  };
+
+  // Handler for ESLVideoPlayer segment changes
+  const handleSegmentChange = (segmentIndex, segment) => {
+    setActiveSegmentIndex(segmentIndex);
+    setCurrentSegment(segment);
   };
 
   // Helper functions for status display
@@ -272,6 +279,7 @@ export const PlayerPage = () => {
             <ESLVideoPlayer
               mediaFile={mediaFile}
               transcription={transcription}
+              selectedSegmentIndex={activeSegmentIndex}
               onProgress={(segmentIndex, segment) => {
                 setActiveSegmentIndex(segmentIndex);
                 setCurrentSegment(segment);
@@ -280,6 +288,8 @@ export const PlayerPage = () => {
                 // Handle segment completion for analytics or progress tracking
                 console.log('Segment completed:', segmentIndex, segment);
               }}
+              onSegmentChange={handleSegmentChange}
+              onPlayerReady={setEslVideoPlayerAPI}
               className="w-full"
             />
 
@@ -339,10 +349,20 @@ export const PlayerPage = () => {
                   currentTime={currentTime}
                   onSegmentClick={handleSegmentClick}
                   onWordClick={(time, word) => {
-                    // Navigate to specific word timestamp
-                    if (playerRef.current) {
-                      playerRef.current.currentTime(time);
-                      playerRef.current.play();
+                    // Find the segment containing this word and select it
+                    const segmentIndex = segments.findIndex(segment =>
+                      time >= segment.start && time <= segment.end
+                    );
+
+                    if (segmentIndex !== -1) {
+                      const segment = segments[segmentIndex];
+                      setActiveSegmentIndex(segmentIndex);
+                      setCurrentSegment(segment);
+
+                      // Trigger playback through ESLVideoPlayer
+                      if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
+                        eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                      }
                     }
                   }}
                   showSearch={true}

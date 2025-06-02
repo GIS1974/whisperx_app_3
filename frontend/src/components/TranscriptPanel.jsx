@@ -417,7 +417,15 @@ const EditableSegment = React.forwardRef(({
         // View mode
         <div
           onClick={() => !isEditMode && onSegmentClick(segment)}
-          className={`flex items-start space-x-3 ${!isEditMode ? 'cursor-pointer' : ''}`}
+          className={`flex items-start space-x-3 p-2 rounded-lg transition-colors ${
+            !isEditMode
+              ? 'cursor-pointer hover:bg-gray-50'
+              : ''
+          } ${
+            isActive
+              ? 'bg-blue-50 border-l-4 border-blue-500'
+              : ''
+          }`}
         >
           <span className="text-xs text-gray-500 font-mono mt-1 flex-shrink-0">
             {formatTimestamp(segment.start)}
@@ -448,7 +456,10 @@ const EditableSegment = React.forwardRef(({
             {/* Edit button in edit mode */}
             {isEditMode && (
               <button
-                onClick={onStartEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartEdit();
+                }}
                 className="mt-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
               >
                 Edit
@@ -469,8 +480,8 @@ const WordLevelText = ({ words, isActive, onWordClick, highlightSearchTerm }) =>
         <span
           key={index}
           onClick={(e) => {
-            e.stopPropagation();
             if (onWordClick && word.start !== undefined) {
+              e.stopPropagation();
               onWordClick(word.start, word);
             }
           }}

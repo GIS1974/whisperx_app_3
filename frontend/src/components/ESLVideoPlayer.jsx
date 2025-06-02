@@ -1,12 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 
-export const ESLVideoPlayer = ({ 
-  mediaFile, 
-  transcription, 
+export const ESLVideoPlayer = ({
+  mediaFile,
+  transcription,
   className = '',
   onProgress,
-  onSegmentComplete 
+  onSegmentComplete,
+  selectedSegmentIndex = null,
+  onSegmentChange,
+  onPlayerReady
 }) => {
   const [currentSegment, setCurrentSegment] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -34,6 +37,30 @@ export const ESLVideoPlayer = ({
     }
   }, [transcription]);
 
+  // Sync with external segment selection
+  useEffect(() => {
+    if (selectedSegmentIndex !== null && selectedSegmentIndex !== currentSegment) {
+      setCurrentSegment(selectedSegmentIndex);
+      // Don't auto-play here since it will be triggered by the parent
+    }
+  }, [selectedSegmentIndex]);
+
+  // Keyboard event handler
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only handle space key if not typing in an input
+      if (event.code === 'Space' && !['INPUT', 'TEXTAREA'].includes(event.target.tagName)) {
+        event.preventDefault();
+        playCurrentSegment();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [currentSegment, segments]);
+
   // Handle player ready
   const handlePlayerReady = (player) => {
     playerRef.current = player;
@@ -48,16 +75,19 @@ export const ESLVideoPlayer = ({
   // Handle time updates to track current segment
   const handleTimeUpdate = () => {
     if (!playerRef.current || segments.length === 0) return;
-    
+
     const currentTime = playerRef.current.currentTime();
-    const activeSegment = segments.findIndex(segment => 
+    const activeSegment = segments.findIndex(segment =>
       currentTime >= segment.start && currentTime <= segment.end
     );
-    
+
     if (activeSegment !== -1 && activeSegment !== currentSegment) {
       setCurrentSegment(activeSegment);
       if (onProgress) {
         onProgress(activeSegment, segments[activeSegment]);
+      }
+      if (onSegmentChange) {
+        onSegmentChange(activeSegment, segments[activeSegment]);
       }
     }
   };
@@ -78,44 +108,55 @@ export const ESLVideoPlayer = ({
     }
   };
 
-  // Play specific segment
-  const playCurrentSegment = () => {
+  // Play specific segment by index
+  const playSegment = (segmentIndex) => {
     if (!playerRef.current || segments.length === 0) return;
-    
-    const segment = segments[currentSegment];
+
+    const segment = segments[segmentIndex];
     if (!segment) return;
-    
-    playerRef.current.currentTime(segment.start);
-    playerRef.current.play();
-    
-    // Set timeout to pause at segment end
+
+    // Clear any existing timeout
     if (segmentTimeoutRef.current) {
       clearTimeout(segmentTimeoutRef.current);
     }
-    
+
+    playerRef.current.currentTime(segment.start);
+    playerRef.current.play();
+
+    // Set timeout to pause at segment end
     segmentTimeoutRef.current = setTimeout(() => {
       if (playerRef.current) {
         playerRef.current.pause();
         if (onSegmentComplete) {
-          onSegmentComplete(currentSegment, segment);
+          onSegmentComplete(segmentIndex, segment);
         }
       }
     }, (segment.duration * 1000) / playbackSpeed);
   };
 
+  // Play current segment
+  const playCurrentSegment = () => {
+    playSegment(currentSegment);
+  };
+
   // Navigate to specific segment
   const goToSegment = (segmentIndex) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
-    
+
     setCurrentSegment(segmentIndex);
     setRepeatCount(0);
-    
+
+    // Notify parent component of segment change
+    if (onSegmentChange) {
+      onSegmentChange(segmentIndex, segments[segmentIndex]);
+    }
+
     if (playerRef.current) {
       const segment = segments[segmentIndex];
       playerRef.current.currentTime(segment.start);
-      
+
       if (playbackMode !== 'normal') {
-        playCurrentSegment();
+        playSegment(segmentIndex);
       }
     }
   };
@@ -146,6 +187,28 @@ export const ESLVideoPlayer = ({
       playerRef.current.playbackRate(speed);
     }
   };
+
+  // Expose functions to parent component through callback
+  useEffect(() => {
+    if (onPlayerReady) {
+      onPlayerReady({
+        playSegmentByIndex: (segmentIndex) => {
+          if (segmentIndex >= 0 && segmentIndex < segments.length) {
+            setCurrentSegment(segmentIndex);
+            setTimeout(() => {
+              playSegment(segmentIndex);
+            }, 100);
+          }
+        },
+        playCurrentSegment: () => {
+          playCurrentSegment();
+        },
+        goToSegment: (segmentIndex) => {
+          goToSegment(segmentIndex);
+        }
+      });
+    }
+  }, [segments, onPlayerReady]);
 
   const currentSegmentData = segments[currentSegment];
 

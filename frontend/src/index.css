@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'video.js/dist/video-js.css';
+@import './styles/esl-player.css';
 
 @tailwind base;
 @tailwind components;
@@ -133,22 +134,7 @@
   @apply opacity-50 cursor-not-allowed;
 }
 
-/* Transcript panel */
-.transcript-panel {
-  @apply h-96 overflow-y-auto bg-gray-50 rounded-lg p-4;
-}
-
-.transcript-segment {
-  @apply p-2 mb-2 rounded cursor-pointer transition-colors duration-200;
-}
-
-.transcript-segment:hover {
-  @apply bg-gray-100;
-}
-
-.transcript-segment.active {
-  @apply bg-primary-100 border-l-4 border-primary-500;
-}
+/* Transcript panel styles moved to esl-player.css */
 
 /* Upload progress */
 .upload-progress {
