@@ -88,23 +88,27 @@ export const mediaAPI = {
 // Transcriptions API
 export const transcriptionAPI = {
   // Get transcription details
-  getTranscription: (fileId, includeRaw = false) => 
-    api.get(`/transcriptions/${fileId}/`, { 
-      params: { include_raw: includeRaw } 
+  getTranscription: (fileId, includeRaw = false) =>
+    api.get(`/transcriptions/${fileId}/`, {
+      params: { include_raw: includeRaw }
     }),
-  
+
   // Get transcription status
   getTranscriptionStatus: (fileId) => api.get(`/transcriptions/${fileId}/status/`),
-  
+
+  // Update transcription segments
+  updateTranscriptionSegments: (fileId, segments) =>
+    api.put(`/transcriptions/${fileId}/update/`, { segments }),
+
   // Download subtitle file
   downloadSubtitleFile: (fileId, fileType) => {
     return api.get(`/transcriptions/${fileId}/download/${fileType}/`, {
       responseType: 'blob',
     });
   },
-  
+
   // Get subtitle file URL for serving (for video player)
-  getSubtitleFileUrl: (fileId, fileType) => 
+  getSubtitleFileUrl: (fileId, fileType) =>
     `${API_BASE_URL}/transcriptions/${fileId}/serve/${fileType}/`,
 };
 

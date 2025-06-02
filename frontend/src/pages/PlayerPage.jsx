@@ -265,9 +265,9 @@ export const PlayerPage = () => {
 
       {/* ESL Video Player */}
       {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen">
           {/* Video Player Column */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4">
             {/* ESL Video Player with integrated controls */}
             <ESLVideoPlayer
               mediaFile={mediaFile}
@@ -329,9 +329,9 @@ export const PlayerPage = () => {
             )}
           </div>
 
-          {/* Transcript Panel Column */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full">
+          {/* Transcript Panel Column - Full Height */}
+          <div className="h-full">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full flex flex-col">
               {transcription ? (
                 <TranscriptPanel
                   segments={segments}
@@ -347,6 +347,8 @@ export const PlayerPage = () => {
                   }}
                   showSearch={true}
                   showStats={true}
+                  mediaFileId={mediaFile.id}
+                  transcriptionId={transcription.id}
                 />
               ) : (
                 <div className="text-center py-8">
