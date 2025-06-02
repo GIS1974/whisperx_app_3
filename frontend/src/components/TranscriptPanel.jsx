@@ -81,9 +81,10 @@ export const TranscriptPanel = ({
   // Editing functions
   const toggleEditMode = () => {
     if (isEditMode) {
-      // Cancel editing - reset to original segments
+      // Cancel editing - reset to original segments and clear search
       setEditedSegments([...segments]);
       setEditingSegmentIndex(null);
+      setSearchTerm(''); // Clear search to return to normal view
     }
     setIsEditMode(!isEditMode);
   };
@@ -186,7 +187,7 @@ export const TranscriptPanel = ({
                 : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
             } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {isEditMode ? 'Cancel Edit' : 'Edit'}
+            {isEditMode ? 'Cancel Edit' : 'Edit Mode'}
           </button>
 
           {/* Save Button */}
@@ -239,24 +240,29 @@ export const TranscriptPanel = ({
             </div>
           </div>
         ) : (
-          filteredSegments.map((segment, index) => (
-            <EditableSegment
-              key={index}
-              segment={segment}
-              index={index}
-              isActive={index === activeSegmentIndex}
-              isEditMode={isEditMode}
-              isEditing={editingSegmentIndex === index}
-              onSegmentClick={onSegmentClick}
-              onWordClick={onWordClick}
-              onStartEdit={() => startEditingSegment(index)}
-              onUpdateSegment={updateSegment}
-              highlightSearchTerm={highlightSearchTerm}
-              formatTimeForInput={formatTimeForInput}
-              parseTimeFromInput={parseTimeFromInput}
-              ref={index === activeSegmentIndex ? activeSegmentRef : null}
-            />
-          ))
+          filteredSegments.map((segment, filteredIndex) => {
+            // Find the original index of this segment in the full segments array
+            const originalIndex = segments.findIndex(s => s.start === segment.start && s.text === segment.text);
+
+            return (
+              <EditableSegment
+                key={filteredIndex}
+                segment={segment}
+                index={originalIndex}
+                isActive={originalIndex === activeSegmentIndex}
+                isEditMode={isEditMode}
+                isEditing={editingSegmentIndex === originalIndex}
+                onSegmentClick={onSegmentClick}
+                onWordClick={onWordClick}
+                onStartEdit={() => startEditingSegment(originalIndex)}
+                onUpdateSegment={updateSegment}
+                highlightSearchTerm={highlightSearchTerm}
+                formatTimeForInput={formatTimeForInput}
+                parseTimeFromInput={parseTimeFromInput}
+                ref={originalIndex === activeSegmentIndex ? activeSegmentRef : null}
+              />
+            );
+          })
         )}
       </div>
 
