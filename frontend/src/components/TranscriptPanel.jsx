@@ -29,7 +29,12 @@ export const TranscriptPanel = ({
   // Initialize edited segments when segments change
   useEffect(() => {
     if (segments) {
-      setEditedSegments([...segments]);
+      // Add original index to each segment for tracking
+      const segmentsWithIndex = segments.map((segment, index) => ({
+        ...segment,
+        originalIndex: index
+      }));
+      setEditedSegments(segmentsWithIndex);
     }
   }, [segments]);
 
@@ -82,7 +87,11 @@ export const TranscriptPanel = ({
   const toggleEditMode = () => {
     if (isEditMode) {
       // Cancel editing - reset to original segments and clear search
-      setEditedSegments([...segments]);
+      const segmentsWithIndex = segments.map((segment, index) => ({
+        ...segment,
+        originalIndex: index
+      }));
+      setEditedSegments(segmentsWithIndex);
       setEditingSegmentIndex(null);
       setSearchTerm(''); // Clear search to return to normal view
     }
@@ -91,6 +100,10 @@ export const TranscriptPanel = ({
 
   const startEditingSegment = (index) => {
     setEditingSegmentIndex(index);
+  };
+
+  const stopEditingSegment = () => {
+    setEditingSegmentIndex(null);
   };
 
   const updateSegment = (index, field, value) => {
@@ -241,8 +254,10 @@ export const TranscriptPanel = ({
           </div>
         ) : (
           filteredSegments.map((segment, filteredIndex) => {
-            // Find the original index of this segment in the full segments array
-            const originalIndex = segments.findIndex(s => s.start === segment.start && s.text === segment.text);
+            // Use the originalIndex property if available, otherwise fall back to finding it
+            const originalIndex = segment.originalIndex !== undefined
+              ? segment.originalIndex
+              : segments.findIndex(s => s.start === segment.start && s.text === segment.text);
 
             return (
               <EditableSegment
@@ -255,6 +270,7 @@ export const TranscriptPanel = ({
                 onSegmentClick={onSegmentClick}
                 onWordClick={onWordClick}
                 onStartEdit={() => startEditingSegment(originalIndex)}
+                onStopEdit={stopEditingSegment}
                 onUpdateSegment={updateSegment}
                 highlightSearchTerm={highlightSearchTerm}
                 formatTimeForInput={formatTimeForInput}
@@ -295,6 +311,7 @@ const EditableSegment = React.forwardRef(({
   onSegmentClick,
   onWordClick,
   onStartEdit,
+  onStopEdit,
   onUpdateSegment,
   highlightSearchTerm,
   formatTimeForInput,
@@ -323,6 +340,9 @@ const EditableSegment = React.forwardRef(({
     onUpdateSegment(index, 'text', localText);
     onUpdateSegment(index, 'start', startSeconds);
     onUpdateSegment(index, 'end', endSeconds);
+
+    // Exit edit mode for this segment after saving
+    onStopEdit();
   };
 
   const handleCancelEdit = () => {
