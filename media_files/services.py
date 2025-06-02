@@ -149,14 +149,41 @@ class AudioChunkingService:
     """Service for splitting large audio files into chunks for Replicate API."""
 
     @staticmethod
-    def split_audio_if_needed(audio_path, max_size_mb=10):
+    def split_audio_if_needed(audio_path, max_size_mb=95):
         """
         Split audio file into chunks if it exceeds the size limit.
+
+        This method first tries the optimized approach (95MB threshold, 90MB chunks).
+        If you need smaller chunks due to network issues, call split_audio_with_smaller_chunks().
+        """
+        return AudioChunkingService._split_audio_internal(audio_path, max_size_mb)
+
+    @staticmethod
+    def split_audio_with_smaller_chunks(audio_path, max_size_mb=50):
+        """
+        Split audio file into smaller chunks for better network reliability.
+        Use this as a fallback when large chunks fail due to connection issues.
+        """
+        logger.info(f"Using smaller chunks ({max_size_mb}MB) for better network reliability")
+
+        # Use different chunk sizes based on threshold
+        if max_size_mb <= 25:
+            target_chunk_size_mb = 20  # Ultra-conservative for very unreliable networks
+        else:
+            target_chunk_size_mb = 45  # Conservative for moderately unreliable networks
+
+        return AudioChunkingService._split_audio_internal(audio_path, max_size_mb, target_chunk_size_mb=target_chunk_size_mb)
+
+    @staticmethod
+    def _split_audio_internal(audio_path, max_size_mb=95, target_chunk_size_mb=None):
+        """
+        Internal method to split audio file into chunks if it exceeds the size limit.
         Returns list of chunk file paths.
 
         Args:
             audio_path: Path to the audio file
-            max_size_mb: Maximum size per chunk in MB (default 10MB for maximum reliability)
+            max_size_mb: Maximum size threshold for chunking
+            target_chunk_size_mb: Target size for each chunk when chunking is needed
 
         Returns:
             List of chunk file paths
@@ -167,15 +194,19 @@ class AudioChunkingService:
             # File is small enough, return as single chunk
             return [audio_path]
 
+        # When chunking is needed, use specified target chunk size or default
+        if target_chunk_size_mb is None:
+            target_chunk_size_mb = 90  # Default: 90MB chunks for optimal performance
+
         # Calculate chunk duration based on file size
         # Estimate: 16kHz mono WAV is approximately 32KB per second
         estimated_duration_seconds = file_size_mb * 1024 * 1024 / (16000 * 2)  # 2 bytes per sample
-        chunk_duration_seconds = int((estimated_duration_seconds * max_size_mb) / file_size_mb)
+        chunk_duration_seconds = int((estimated_duration_seconds * target_chunk_size_mb) / file_size_mb)
 
         # Ensure minimum chunk duration of 30 seconds
         chunk_duration_seconds = max(30, chunk_duration_seconds)
 
-        logger.info(f"Splitting audio file ({file_size_mb:.2f}MB) into chunks of {chunk_duration_seconds}s")
+        logger.info(f"Splitting audio file ({file_size_mb:.2f}MB) into ~{target_chunk_size_mb}MB chunks of {chunk_duration_seconds}s")
 
         # Create chunks directory
         audio_path_obj = Path(audio_path)

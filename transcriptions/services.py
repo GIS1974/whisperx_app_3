@@ -44,8 +44,8 @@ class TranscriptionService:
             from media_files.services import AudioChunkingService
 
             # Split audio into chunks if needed (100MB Replicate limit)
-            # Use very small chunks to ensure reliable upload (10MB max for maximum reliability)
-            chunk_paths = AudioChunkingService.split_audio_if_needed(audio_path, max_size_mb=10)
+            # Use ultra-conservative chunking (25MB threshold, 20MB chunks) for maximum reliability
+            chunk_paths = AudioChunkingService.split_audio_with_smaller_chunks(audio_path, max_size_mb=25)
 
             if len(chunk_paths) > 1:
                 logger.info(f"Audio file split into {len(chunk_paths)} chunks")
@@ -106,7 +106,7 @@ class TranscriptionService:
 
                     for attempt in range(max_retries):
                         try:
-                            logger.info(f"Chunk {i+1}, attempt {attempt+1}/{max_retries}")
+                            logger.info(f"Chunk {i+1}, attempt {attempt+1}/{max_retries} (size: {chunk_size_mb:.2f}MB)")
 
                             with open(chunk_path, "rb") as audio_file:
                                 # Build input parameters
@@ -122,6 +122,8 @@ class TranscriptionService:
                                 if has_hf_token:
                                     input_params["huggingface_access_token"] = settings.HUGGINGFACE_ACCESS_TOKEN
 
+                                # Create prediction with longer timeout for large files
+                                logger.info(f"Uploading {chunk_size_mb:.2f}MB chunk to Replicate API...")
                                 prediction = client.predictions.create(
                                     version="victor-upmeet/whisperx-a40-large:1395a1d7aa48a01094887250475f384d4bae08fd0616f9c405bb81d4174597ea",
                                     input=input_params
