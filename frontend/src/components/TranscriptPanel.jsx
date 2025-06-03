@@ -14,7 +14,8 @@ export const TranscriptPanel = ({
   showSearch = true,
   showStats = true,
   mediaFileId,
-  transcriptionId
+  transcriptionId,
+  onTranscriptionUpdate
 }) => {
   const activeSegmentRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,22 +26,30 @@ export const TranscriptPanel = ({
   const [editedSegments, setEditedSegments] = useState([]);
   const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Initialize edited segments when segments change
   useEffect(() => {
     if (segments) {
-      // Add original index to each segment for tracking
-      const segmentsWithIndex = segments.map((segment, index) => ({
-        ...segment,
-        originalIndex: index
-      }));
-      setEditedSegments(segmentsWithIndex);
+      // Only reset editedSegments if we don't have unsaved changes
+      // This prevents losing edits when the parent component refreshes data
+      if (!hasUnsavedChanges && editedSegments.length === 0) {
+        // Add original index to each segment for tracking
+        const segmentsWithIndex = segments.map((segment, index) => ({
+          ...segment,
+          originalIndex: index
+        }));
+        setEditedSegments(segmentsWithIndex);
+      }
     }
-  }, [segments]);
+  }, [segments, hasUnsavedChanges, editedSegments.length]);
 
   // Update filtered segments when segments or search term changes
   useEffect(() => {
-    const sourceSegments = isEditMode ? editedSegments : segments;
+    // Always use the most recent segments data
+    // If we have editedSegments and they're not empty, use those
+    // Otherwise use the original segments
+    const sourceSegments = (editedSegments && editedSegments.length > 0) ? editedSegments : segments;
 
     if (!sourceSegments) {
       setFilteredSegments([]);
@@ -55,7 +64,7 @@ export const TranscriptPanel = ({
       );
       setFilteredSegments(filtered);
     }
-  }, [segments, editedSegments, searchTerm, isEditMode]);
+  }, [segments, editedSegments, searchTerm]);
 
   // Auto-scroll to active segment
   useEffect(() => {
@@ -87,6 +96,7 @@ export const TranscriptPanel = ({
   const toggleEditMode = () => {
     if (isEditMode) {
       // Cancel editing - reset to original segments and clear search
+      // Only clear editedSegments if we're canceling (not if we just saved)
       const segmentsWithIndex = segments.map((segment, index) => ({
         ...segment,
         originalIndex: index
@@ -94,6 +104,17 @@ export const TranscriptPanel = ({
       setEditedSegments(segmentsWithIndex);
       setEditingSegmentIndex(null);
       setSearchTerm(''); // Clear search to return to normal view
+      setHasUnsavedChanges(false); // Clear unsaved changes flag when canceling
+    } else {
+      // Enter edit mode - initialize editedSegments with current segments
+      // Use editedSegments if they exist (from previous edits), otherwise use original segments
+      const sourceSegments = (editedSegments && editedSegments.length > 0) ? editedSegments : segments;
+      const segmentsWithIndex = sourceSegments.map((segment, index) => ({
+        ...segment,
+        originalIndex: segment.originalIndex !== undefined ? segment.originalIndex : index
+      }));
+      setEditedSegments(segmentsWithIndex);
+
     }
     setIsEditMode(!isEditMode);
   };
@@ -107,12 +128,25 @@ export const TranscriptPanel = ({
   };
 
   const updateSegment = (index, field, value) => {
-    const updatedSegments = [...editedSegments];
-    updatedSegments[index] = {
-      ...updatedSegments[index],
-      [field]: value
-    };
-    setEditedSegments(updatedSegments);
+    setEditedSegments(prevSegments => {
+      const updatedSegments = [...prevSegments];
+
+      // Ensure the segment exists at the index
+      if (updatedSegments[index]) {
+        updatedSegments[index] = {
+          ...updatedSegments[index],
+          [field]: value
+        };
+      } else {
+        console.error('No segment found at index:', index);
+        return prevSegments; // Return unchanged state
+      }
+
+      return updatedSegments;
+    });
+
+    // Mark that we have unsaved changes
+    setHasUnsavedChanges(true);
   };
 
   const saveChanges = async () => {
@@ -123,15 +157,24 @@ export const TranscriptPanel = ({
 
     setIsSaving(true);
     try {
-      await transcriptionAPI.updateTranscriptionSegments(mediaFileId, editedSegments);
+      const response = await transcriptionAPI.updateTranscriptionSegments(mediaFileId, editedSegments);
       toast.success('Transcript updated successfully!');
+
+      // Clear the unsaved changes flag since we just saved
+      setHasUnsavedChanges(false);
+
+      // Call parent component to refresh transcription data first
+      if (onTranscriptionUpdate) {
+        await onTranscriptionUpdate();
+      }
+
+      // Exit edit mode but keep the editedSegments so changes remain visible
       setIsEditMode(false);
       setEditingSegmentIndex(null);
-
-      // Optionally refresh the page or update parent component
-      window.location.reload();
+      // Note: We don't clear editedSegments here so the changes remain visible
     } catch (error) {
       console.error('Error saving changes:', error);
+      console.error('Error details:', error.response?.data);
       toast.error('Failed to save changes. Please try again.');
     } finally {
       setIsSaving(false);
@@ -259,9 +302,12 @@ export const TranscriptPanel = ({
               ? segment.originalIndex
               : segments.findIndex(s => s.start === segment.start && s.text === segment.text);
 
+            // Create a unique key that includes the segment content to force re-render when text changes
+            const segmentKey = `${originalIndex}-${segment.start}-${segment.text.substring(0, 20)}`;
+
             return (
               <EditableSegment
-                key={filteredIndex}
+                key={segmentKey}
                 segment={segment}
                 index={originalIndex}
                 isActive={originalIndex === activeSegmentIndex}
@@ -441,16 +487,8 @@ const EditableSegment = React.forwardRef(({
 
             {/* Segment text */}
             <div className="text-sm text-gray-900 leading-relaxed">
-              {segment.words ? (
-                <WordLevelText
-                  words={segment.words}
-                  isActive={isActive}
-                  onWordClick={onWordClick}
-                  highlightSearchTerm={highlightSearchTerm}
-                />
-              ) : (
-                <span>{highlightSearchTerm(segment.text)}</span>
-              )}
+              {/* Always show the segment.text to ensure edited text is displayed */}
+              <span>{highlightSearchTerm(segment.text)}</span>
             </div>
 
             {/* Edit button in edit mode */}

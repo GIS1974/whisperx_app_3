@@ -208,8 +208,14 @@ def update_transcription_segments(request, file_id):
     """
     Update transcription segments with edited content and timing.
     """
+    print(f"=== UPDATE TRANSCRIPTION SEGMENTS CALLED ===")
+    print(f"File ID: {file_id}")
+    print(f"Request method: {request.method}")
+    print(f"Request data: {request.data}")
+
     # For testing without authentication, get any media file with this ID
     media_file = get_object_or_404(MediaFile, id=file_id)
+    print(f"Found media file: {media_file.filename_original}")
 
     try:
         transcription = media_file.transcription

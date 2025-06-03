@@ -56,12 +56,18 @@ export const PlayerPage = () => {
 
   const fetchTranscription = async () => {
     try {
+      console.log('=== FETCHING TRANSCRIPTION ===');
       const transcriptionData = await transcriptionAPI.getTranscription(fileId);
+      console.log('Transcription data received:', transcriptionData);
       setTranscription(transcriptionData);
 
       // Parse segments from raw output for transcript display
       if (transcriptionData.raw_whisperx_output?.segments) {
+        console.log('Setting segments from raw_whisperx_output:', transcriptionData.raw_whisperx_output.segments.length, 'segments');
+        console.log('First few segments:', transcriptionData.raw_whisperx_output.segments.slice(0, 10));
         setSegments(transcriptionData.raw_whisperx_output.segments);
+      } else {
+        console.log('No segments found in raw_whisperx_output');
       }
     } catch (error) {
       console.error('Error fetching transcription:', error);
@@ -369,6 +375,7 @@ export const PlayerPage = () => {
                   showStats={true}
                   mediaFileId={mediaFile.id}
                   transcriptionId={transcription.id}
+                  onTranscriptionUpdate={fetchTranscription}
                 />
               ) : (
                 <div className="text-center py-8">
