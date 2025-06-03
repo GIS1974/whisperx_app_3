@@ -44,7 +44,7 @@ class TranscriptionService:
             from media_files.services import AudioChunkingService
 
             # Split audio into chunks if needed (100MB Replicate limit)
-            # Use ultra-conservative chunking (25MB threshold, 20MB chunks) for maximum reliability
+            # Use ultra-conservative chunking (25MB threshold, 15MB chunks) for maximum reliability
             chunk_paths = AudioChunkingService.split_audio_with_smaller_chunks(audio_path, max_size_mb=25)
 
             if len(chunk_paths) > 1:

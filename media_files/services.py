@@ -168,7 +168,7 @@ class AudioChunkingService:
 
         # Use different chunk sizes based on threshold
         if max_size_mb <= 25:
-            target_chunk_size_mb = 20  # Ultra-conservative for very unreliable networks
+            target_chunk_size_mb = 15  # Ultra-conservative for very unreliable networks (reduced from 20MB)
         else:
             target_chunk_size_mb = 45  # Conservative for moderately unreliable networks
 

@@ -158,6 +158,9 @@ AudioChunkingService.split_audio_if_needed(audio_path, max_size_mb=95)
 # Conservative: 50MB threshold, 45MB chunks
 AudioChunkingService.split_audio_with_smaller_chunks(audio_path, max_size_mb=50)
 
+# Ultra-conservative: 25MB threshold, 15MB chunks (for unreliable networks)
+AudioChunkingService.split_audio_with_smaller_chunks(audio_path, max_size_mb=25)
+
 # Legacy: 10MB threshold, 10MB chunks
 AudioChunkingService.split_audio_if_needed(audio_path, max_size_mb=10)
 ```
@@ -166,14 +169,17 @@ AudioChunkingService.split_audio_if_needed(audio_path, max_size_mb=10)
 
 ### "Server disconnected without sending a response"
 This error typically occurs with large chunk uploads due to:
-- Network timeouts during 90MB file transfers
+- Network timeouts during large file transfers
 - Unstable internet connections
 - Replicate API timeout limits
 
 **Solutions:**
-1. Use the smaller chunks fallback method
-2. Check network stability
-3. Consider using the conservative 50MB approach for unreliable connections
+1. Use the ultra-conservative 25MB threshold with 15MB chunks for maximum reliability
+2. Use the smaller chunks fallback method with 50MB threshold
+3. Check network stability
+4. Consider using the conservative 50MB approach for moderately unreliable connections
+
+**Recent Update:** Reduced ultra-conservative chunk size from 20MB to 15MB to provide additional safety margin for networks experiencing consistent failures around 20MB.
 
 ## Rollback Plan
 
