@@ -2,12 +2,39 @@
 
 .esl-video-player {
   /* Container styles */
+  scroll-behavior: smooth;
 }
 
 .esl-video-player .video-js {
   /* Ensure Video.js player takes full width */
   width: 100% !important;
   height: auto !important;
+}
+
+/* Prevent page scrolling when navigating segments */
+.esl-video-player button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  scroll-margin-top: 2rem;
+}
+
+/* Ensure player container stays in view */
+.esl-video-player {
+  scroll-margin-top: 2rem;
+}
+
+/* Fix layout stability */
+.player-layout-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  min-height: 0;
+}
+
+@media (min-width: 1280px) {
+  .player-layout-container {
+    grid-template-columns: 2fr 1fr;
+  }
 }
 
 /* Transcript Panel Styles */

@@ -286,26 +286,28 @@ export const PlayerPage = () => {
 
       {/* ESL Video Player */}
       {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 min-h-0">
           {/* Video Player Column - Takes 2/3 width on xl screens */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-6 min-h-0">
             {/* ESL Video Player with integrated controls */}
-            <ESLVideoPlayer
-              mediaFile={mediaFile}
-              transcription={transcription}
-              selectedSegmentIndex={activeSegmentIndex}
-              onProgress={(segmentIndex, segment) => {
-                setActiveSegmentIndex(segmentIndex);
-                setCurrentSegment(segment);
-              }}
-              onSegmentComplete={(segmentIndex, segment) => {
-                // Handle segment completion for analytics or progress tracking
-                console.log('Segment completed:', segmentIndex, segment);
-              }}
-              onSegmentChange={handleSegmentChange}
-              onPlayerReady={setEslVideoPlayerAPI}
-              className="w-full"
-            />
+            <div className="sticky top-4">
+              <ESLVideoPlayer
+                mediaFile={mediaFile}
+                transcription={transcription}
+                selectedSegmentIndex={activeSegmentIndex}
+                onProgress={(segmentIndex, segment) => {
+                  setActiveSegmentIndex(segmentIndex);
+                  setCurrentSegment(segment);
+                }}
+                onSegmentComplete={(segmentIndex, segment) => {
+                  // Handle segment completion for analytics or progress tracking
+                  console.log('Segment completed:', segmentIndex, segment);
+                }}
+                onSegmentChange={handleSegmentChange}
+                onPlayerReady={setEslVideoPlayerAPI}
+                className="w-full"
+              />
+            </div>
 
             {/* Download Options - Only show when transcription is available */}
             {transcription && (
@@ -354,9 +356,9 @@ export const PlayerPage = () => {
           </div>
 
           {/* Transcript Panel Column - 1/3 width on xl screens */}
-          <div className="xl:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-12rem)] flex flex-col overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
+          <div className="xl:col-span-1 min-h-0">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-12rem)] flex flex-col overflow-hidden sticky top-4">
+              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 flex-shrink-0">
                 <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
                 <p className="text-sm text-gray-600 mt-1">Click any segment to jump to that part</p>
               </div>

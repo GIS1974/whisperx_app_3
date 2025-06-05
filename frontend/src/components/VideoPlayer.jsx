@@ -29,7 +29,7 @@ export const VideoPlayer = ({
           controls: true,
           responsive: true,
           fluid: true,
-          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+          playbackRates: [], // Remove built-in speed controls to avoid duplication
           preload: 'metadata',
           errorDisplay: true,
         }, () => {

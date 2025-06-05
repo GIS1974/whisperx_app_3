@@ -32,10 +32,16 @@ export const ESLVideoPlayer = ({
         id: index,
         start: segment.start,
         end: segment.end,
-        text: segment.text.trim(),
+        text: segment.text?.trim() || '', // Ensure text is always a string
         duration: segment.end - segment.start
       }));
       setSegments(parsedSegments);
+
+      // Debug log to check for text truncation issues
+      console.log('Parsed segments:', parsedSegments.length);
+      if (parsedSegments.length > 0) {
+        console.log('Sample segment:', parsedSegments[0]);
+      }
     }
   }, [transcription]);
 
@@ -46,6 +52,15 @@ export const ESLVideoPlayer = ({
       // Don't auto-play here since it will be triggered by the parent
     }
   }, [selectedSegmentIndex]);
+
+  // Force subtitle update when current segment changes
+  useEffect(() => {
+    if (segments.length > 0 && currentSegment >= 0 && currentSegment < segments.length) {
+      // Force a re-render of the subtitle display
+      const currentSegmentData = segments[currentSegment];
+      console.log('Current segment updated:', currentSegment, currentSegmentData?.text);
+    }
+  }, [currentSegment, segments]);
 
   // Keyboard event handler
   useEffect(() => {
@@ -82,12 +97,19 @@ export const ESLVideoPlayer = ({
   // Handle player ready
   const handlePlayerReady = (player) => {
     playerRef.current = player;
-    
+
     // Set up time update listener for segment tracking
     player.on('timeupdate', handleTimeUpdate);
     player.on('play', () => setIsPlaying(true));
     player.on('pause', () => setIsPlaying(false));
     player.on('ended', handleVideoEnd);
+
+    // Initialize subtitle display by triggering a time update
+    setTimeout(() => {
+      if (segments.length > 0 && currentSegment >= 0) {
+        handleTimeUpdate();
+      }
+    }, 500);
   };
 
   // Handle time updates to track current segment
@@ -99,13 +121,16 @@ export const ESLVideoPlayer = ({
       currentTime >= segment.start && currentTime <= segment.end
     );
 
-    if (activeSegment !== -1 && activeSegment !== currentSegment) {
-      setCurrentSegment(activeSegment);
-      if (onProgress) {
-        onProgress(activeSegment, segments[activeSegment]);
-      }
-      if (onSegmentChange) {
-        onSegmentChange(activeSegment, segments[activeSegment]);
+    // Always update current segment during normal playback to ensure subtitles update
+    if (activeSegment !== -1) {
+      if (activeSegment !== currentSegment) {
+        setCurrentSegment(activeSegment);
+        if (onProgress) {
+          onProgress(activeSegment, segments[activeSegment]);
+        }
+        if (onSegmentChange) {
+          onSegmentChange(activeSegment, segments[activeSegment]);
+        }
       }
     }
   };
@@ -161,10 +186,16 @@ export const ESLVideoPlayer = ({
   const goToSegment = (segmentIndex) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
 
+    // Prevent page scrolling during navigation
+    event?.preventDefault?.();
+
     setCurrentSegment(segmentIndex);
     setRepeatCount(0);
 
     // Notify parent component of segment change
+    if (onProgress) {
+      onProgress(segmentIndex, segments[segmentIndex]);
+    }
     if (onSegmentChange) {
       onSegmentChange(segmentIndex, segments[segmentIndex]);
     }
@@ -190,11 +221,13 @@ export const ESLVideoPlayer = ({
   };
 
   // Navigation controls
-  const goToPreviousSegment = () => {
+  const goToPreviousSegment = (event) => {
+    event?.preventDefault?.();
     goToSegment(currentSegment - 1);
   };
 
-  const goToNextSegment = () => {
+  const goToNextSegment = (event) => {
+    event?.preventDefault?.();
     goToSegment(currentSegment + 1);
   };
 
@@ -244,11 +277,11 @@ export const ESLVideoPlayer = ({
           className="w-full aspect-video"
         />
 
-        {/* Subtitle Overlay - Positioned over video */}
-        {currentSegmentData && showTranscript && (
+        {/* Subtitle Overlay - Positioned over video with transparency */}
+        {currentSegmentData && showTranscript && currentSegmentData.text && (
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
-            <div className="bg-black/90 backdrop-blur-md rounded-2xl px-8 py-4 text-center shadow-2xl border border-white/10">
-              <p className="text-2xl leading-relaxed text-white font-medium tracking-wide">
+            <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-4 text-center shadow-2xl border border-white/20">
+              <p className="text-2xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap">
                 {currentSegmentData.text}
               </p>
             </div>
@@ -266,23 +299,8 @@ export const ESLVideoPlayer = ({
           />
         )}
 
-        {/* Video Overlay Controls */}
+        {/* Video Overlay Controls - Removed duplicate speed control */}
         <div className="absolute top-4 right-4 flex items-center gap-3 pointer-events-auto">
-          {/* Speed Control */}
-          <div className="bg-black/70 backdrop-blur-sm rounded-xl px-3 py-2">
-            <select
-              value={playbackSpeed}
-              onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-              className="bg-transparent text-white text-sm border-none outline-none cursor-pointer"
-            >
-              <option value={0.5} className="bg-black">0.5x</option>
-              <option value={0.75} className="bg-black">0.75x</option>
-              <option value={1} className="bg-black">1x</option>
-              <option value={1.25} className="bg-black">1.25x</option>
-              <option value={1.5} className="bg-black">1.5x</option>
-            </select>
-          </div>
-
           {/* Settings Toggle */}
           <button
             onClick={() => setShowTranscript(!showTranscript)}
@@ -385,7 +403,10 @@ export const ESLVideoPlayer = ({
             <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Segment Navigation</h4>
             <div className="flex items-center justify-center gap-3">
               <button
-                onClick={goToPreviousSegment}
+                onClick={(e) => {
+                  e.preventDefault();
+                  goToPreviousSegment(e);
+                }}
                 disabled={currentSegment === 0}
                 className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 title="Previous Segment"
@@ -396,7 +417,10 @@ export const ESLVideoPlayer = ({
               </button>
 
               <button
-                onClick={playCurrentSegment}
+                onClick={(e) => {
+                  e.preventDefault();
+                  playCurrentSegment();
+                }}
                 className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,7 +430,10 @@ export const ESLVideoPlayer = ({
               </button>
 
               <button
-                onClick={goToNextSegment}
+                onClick={(e) => {
+                  e.preventDefault();
+                  goToNextSegment(e);
+                }}
                 disabled={currentSegment === segments.length - 1}
                 className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 title="Next Segment"
@@ -447,6 +474,22 @@ export const ESLVideoPlayer = ({
             {/* Playback Settings */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Playback Settings</h4>
+
+              {/* Speed Control */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Playback Speed</label>
+                <select
+                  value={playbackSpeed}
+                  onChange={(e) => changeSpeed(parseFloat(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value={0.5}>0.5x (Slow)</option>
+                  <option value={0.75}>0.75x</option>
+                  <option value={1}>1x (Normal)</option>
+                  <option value={1.25}>1.25x</option>
+                  <option value={1.5}>1.5x (Fast)</option>
+                </select>
+              </div>
 
               {playbackMode === 'repeat' && (
                 <div className="space-y-2">
