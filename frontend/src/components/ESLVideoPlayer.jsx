@@ -59,30 +59,104 @@ export const ESLVideoPlayer = ({
     }
   }, [selectedSegmentIndex]);
 
-  // Handle time updates to track current segment
+  // Calculate precise timing for segment playback using word-level data
+  const calculatePreciseTiming = useCallback((segment) => {
+    const START_BUFFER = 0.15; // 150ms buffer before first word
+    const END_BUFFER = 0.25;   // 250ms buffer after last word (increased for better coverage)
+    const MIN_END_BUFFER = 0.1; // Minimum buffer to ensure natural completion
+
+    // If no word-level data is available, use segment timing with small buffer
+    if (!segment.words || segment.words.length === 0) {
+      return {
+        startTime: Math.max(0, segment.start - START_BUFFER),
+        endTime: segment.end + END_BUFFER,
+        duration: (segment.end + END_BUFFER) - Math.max(0, segment.start - START_BUFFER)
+      };
+    }
+
+    // Find first and last words with valid timing
+    const wordsWithTiming = segment.words.filter(word =>
+      word.start !== undefined && word.end !== undefined &&
+      word.start !== null && word.end !== null &&
+      typeof word.start === 'number' && typeof word.end === 'number'
+    );
+
+    if (wordsWithTiming.length === 0) {
+      // Fallback to segment timing if no valid word timing
+      return {
+        startTime: Math.max(0, segment.start - START_BUFFER),
+        endTime: segment.end + END_BUFFER,
+        duration: (segment.end + END_BUFFER) - Math.max(0, segment.start - START_BUFFER)
+      };
+    }
+
+    // Use first word start time and last word end time with buffers
+    const firstWordStart = wordsWithTiming[0].start;
+    const lastWordEnd = wordsWithTiming[wordsWithTiming.length - 1].end;
+
+    const preciseStartTime = Math.max(0, firstWordStart - START_BUFFER);
+
+    // Calculate end time with intelligent buffering
+    let preciseEndTime = lastWordEnd + END_BUFFER;
+
+    // Safety check: ensure we don't end too early compared to segment timing
+    // If word end time is significantly before segment end, use segment end with minimum buffer
+    const wordToSegmentGap = segment.end - lastWordEnd;
+    if (wordToSegmentGap > 0.5) {
+      // Large gap suggests word timing might be inaccurate, use segment timing
+      preciseEndTime = segment.end + MIN_END_BUFFER;
+    } else if (wordToSegmentGap > 0.1) {
+      // Moderate gap, use the later of word+buffer or segment+min_buffer
+      const wordBasedEnd = lastWordEnd + END_BUFFER;
+      const segmentBasedEnd = segment.end + MIN_END_BUFFER;
+      preciseEndTime = Math.max(wordBasedEnd, segmentBasedEnd);
+    }
+
+    // Final safety check: ensure end time is not before segment end
+    preciseEndTime = Math.max(preciseEndTime, segment.end + MIN_END_BUFFER);
+
+    return {
+      startTime: preciseStartTime,
+      endTime: preciseEndTime,
+      duration: preciseEndTime - preciseStartTime
+    };
+  }, []);
+
+  // Handle time updates to track current segment using enhanced timing boundaries
   const handleTimeUpdate = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
 
     const currentTime = playerRef.current.currentTime();
     console.log('Time update:', currentTime.toFixed(2), 'Current segment:', currentSegment);
 
-    // Find the segment that contains the current time
-    const activeSegment = segments.findIndex(segment =>
-      currentTime >= segment.start && currentTime <= segment.end
-    );
+    // Find the segment that contains the current time using enhanced timing boundaries
+    const activeSegment = segments.findIndex((segment, index) => {
+      const timing = calculatePreciseTiming(segment);
+      return currentTime >= timing.startTime && currentTime <= timing.endTime;
+    });
 
-    // If no segment contains the current time, find the closest one
+    // If no segment contains the current time, find the closest one using enhanced boundaries
     let segmentToShow = activeSegment;
     if (activeSegment === -1) {
-      // Find the closest segment based on time
+      // Find the closest segment based on enhanced timing
       segmentToShow = segments.findIndex((segment, index) => {
+        const timing = calculatePreciseTiming(segment);
         const nextSegment = segments[index + 1];
-        return currentTime >= segment.start && (!nextSegment || currentTime < nextSegment.start);
+
+        if (nextSegment) {
+          const nextTiming = calculatePreciseTiming(nextSegment);
+          return currentTime >= timing.startTime && currentTime < nextTiming.startTime;
+        } else {
+          // Last segment - check if we're after its enhanced start
+          return currentTime >= timing.startTime;
+        }
       });
 
       // If still not found, use the last segment if we're past the end
       if (segmentToShow === -1) {
-        if (currentTime > segments[segments.length - 1].end) {
+        const lastSegment = segments[segments.length - 1];
+        const lastTiming = calculatePreciseTiming(lastSegment);
+        if (currentTime > lastTiming.endTime) {
           segmentToShow = segments.length - 1;
         } else {
           segmentToShow = 0; // Default to first segment
@@ -240,82 +314,7 @@ export const ESLVideoPlayer = ({
 
 
 
-  // Calculate precise timing for segment playback using word-level data
-  const calculatePreciseTiming = (segment) => {
-    const START_BUFFER = 0.15; // 150ms buffer before first word
-    const END_BUFFER = 0.25;   // 250ms buffer after last word (increased for better coverage)
-    const MIN_END_BUFFER = 0.1; // Minimum buffer to ensure natural completion
 
-    // If no word-level data is available, use segment timing with small buffer
-    if (!segment.words || segment.words.length === 0) {
-      return {
-        startTime: Math.max(0, segment.start - START_BUFFER),
-        endTime: segment.end + END_BUFFER,
-        duration: (segment.end + END_BUFFER) - Math.max(0, segment.start - START_BUFFER)
-      };
-    }
-
-    // Find first and last words with valid timing
-    const wordsWithTiming = segment.words.filter(word =>
-      word.start !== undefined && word.end !== undefined &&
-      word.start !== null && word.end !== null &&
-      typeof word.start === 'number' && typeof word.end === 'number'
-    );
-
-    if (wordsWithTiming.length === 0) {
-      // Fallback to segment timing if no valid word timing
-      return {
-        startTime: Math.max(0, segment.start - START_BUFFER),
-        endTime: segment.end + END_BUFFER,
-        duration: (segment.end + END_BUFFER) - Math.max(0, segment.start - START_BUFFER)
-      };
-    }
-
-    // Use first word start time and last word end time with buffers
-    const firstWordStart = wordsWithTiming[0].start;
-    const lastWordEnd = wordsWithTiming[wordsWithTiming.length - 1].end;
-
-    const preciseStartTime = Math.max(0, firstWordStart - START_BUFFER);
-
-    // Calculate end time with intelligent buffering
-    let preciseEndTime = lastWordEnd + END_BUFFER;
-
-    // Safety check: ensure we don't end too early compared to segment timing
-    // If word end time is significantly before segment end, use segment end with minimum buffer
-    const wordToSegmentGap = segment.end - lastWordEnd;
-    if (wordToSegmentGap > 0.5) {
-      // Large gap suggests word timing might be inaccurate, use segment timing
-      preciseEndTime = segment.end + MIN_END_BUFFER;
-      console.log('Large gap detected between last word and segment end, using segment timing');
-    } else if (wordToSegmentGap > 0.1) {
-      // Moderate gap, use the later of word+buffer or segment+min_buffer
-      const wordBasedEnd = lastWordEnd + END_BUFFER;
-      const segmentBasedEnd = segment.end + MIN_END_BUFFER;
-      preciseEndTime = Math.max(wordBasedEnd, segmentBasedEnd);
-      console.log('Moderate gap detected, using maximum of word-based and segment-based timing');
-    }
-
-    // Final safety check: ensure end time is not before segment end
-    preciseEndTime = Math.max(preciseEndTime, segment.end + MIN_END_BUFFER);
-
-    console.log('Precise timing calculated:', {
-      segmentStart: segment.start,
-      segmentEnd: segment.end,
-      firstWordStart,
-      lastWordEnd,
-      wordToSegmentGap: wordToSegmentGap.toFixed(3),
-      preciseStartTime,
-      preciseEndTime,
-      wordsCount: wordsWithTiming.length,
-      strategy: wordToSegmentGap > 0.5 ? 'segment-based' : wordToSegmentGap > 0.1 ? 'hybrid' : 'word-based'
-    });
-
-    return {
-      startTime: preciseStartTime,
-      endTime: preciseEndTime,
-      duration: preciseEndTime - preciseStartTime
-    };
-  };
 
   // Handle video end
   const handleVideoEnd = () => {
@@ -376,6 +375,25 @@ export const ESLVideoPlayer = ({
     playSegment(currentSegment);
   };
 
+  // Navigate to segment start position with enhanced timing (no auto-play)
+  const navigateToSegmentStart = (segmentIndex) => {
+    if (!playerRef.current || segments.length === 0) return;
+
+    const segment = segments[segmentIndex];
+    if (!segment) return;
+
+    // Use enhanced timing for positioning to prevent cut-offs
+    const timing = calculatePreciseTiming(segment);
+
+    console.log(`Positioning at segment ${segmentIndex} start:`, {
+      originalStart: segment.start,
+      enhancedStart: timing.startTime,
+      difference: (timing.startTime - segment.start).toFixed(3)
+    });
+
+    playerRef.current.currentTime(timing.startTime);
+  };
+
   // Navigate to specific segment
   const goToSegment = (segmentIndex) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
@@ -395,8 +413,8 @@ export const ESLVideoPlayer = ({
     }
 
     if (playerRef.current) {
-      const segment = segments[segmentIndex];
-      playerRef.current.currentTime(segment.start);
+      // Use enhanced timing for navigation to prevent cut-offs
+      navigateToSegmentStart(segmentIndex);
 
       if (playbackMode !== 'normal') {
         playSegment(segmentIndex);
@@ -444,6 +462,8 @@ export const ESLVideoPlayer = ({
           if (segmentIndex >= 0 && segmentIndex < segments.length) {
             setCurrentSegment(segmentIndex);
             setTimeout(() => {
+              // Navigate to enhanced start position then play
+              navigateToSegmentStart(segmentIndex);
               playSegment(segmentIndex);
             }, 100);
           }
@@ -540,8 +560,8 @@ export const ESLVideoPlayer = ({
                 {currentSegmentData && (
                   <span className="ml-2">• {currentSegmentData.duration.toFixed(1)}s</span>
                 )}
-                {playbackMode === 'repeat' && currentSegmentData?.words?.length > 0 && (
-                  <span className="ml-2 text-blue-600">• Word-level timing</span>
+                {currentSegmentData?.words?.length > 0 && (
+                  <span className="ml-2 text-blue-600">• Enhanced timing active</span>
                 )}
               </p>
             </div>
