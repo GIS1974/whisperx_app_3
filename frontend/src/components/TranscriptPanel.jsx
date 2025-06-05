@@ -588,18 +588,58 @@ const EditableSegment = React.forwardRef(({
       return;
     }
 
-    onUpdateSegment(index, 'text', localText);
+    if (startSeconds < 0) {
+      toast.error('Start time cannot be negative');
+      return;
+    }
+
+    if (!localText.trim()) {
+      toast.error('Segment text cannot be empty');
+      return;
+    }
+
+    onUpdateSegment(index, 'text', localText.trim());
     onUpdateSegment(index, 'start', startSeconds);
     onUpdateSegment(index, 'end', endSeconds);
 
     // Exit edit mode for this segment after saving
     onStopEdit();
+    toast.success('Segment updated successfully');
   };
 
   const handleCancelEdit = () => {
     setLocalText(segment.text);
     setLocalStartTime(formatTimeForInput(segment.start));
     setLocalEndTime(formatTimeForInput(segment.end));
+    onStopEdit(); // Close the editing window
+  };
+
+  // Time adjustment helpers
+  const adjustTime = (timeString, adjustment) => {
+    const currentSeconds = parseTimeFromInput(timeString);
+    const newSeconds = Math.max(0, currentSeconds + adjustment);
+    return formatTimeForInput(newSeconds);
+  };
+
+  const adjustStartTime = (adjustment) => {
+    setLocalStartTime(prev => adjustTime(prev, adjustment));
+  };
+
+  const adjustEndTime = (adjustment) => {
+    setLocalEndTime(prev => adjustTime(prev, adjustment));
+  };
+
+  // Validation helpers
+  const isValidTimeRange = () => {
+    const startSeconds = parseTimeFromInput(localStartTime);
+    const endSeconds = parseTimeFromInput(localEndTime);
+    return endSeconds > startSeconds && startSeconds >= 0;
+  };
+
+  const getDuration = () => {
+    const startSeconds = parseTimeFromInput(localStartTime);
+    const endSeconds = parseTimeFromInput(localEndTime);
+    return Math.max(0, endSeconds - startSeconds);
   };
 
   return (
@@ -611,57 +651,139 @@ const EditableSegment = React.forwardRef(({
     >
       {isEditing ? (
         // Edit mode
-        <div className="space-y-3 p-3 bg-blue-50 rounded-lg">
-          {/* Time inputs */}
-          <div className="flex space-x-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Start Time</label>
-              <input
-                type="text"
-                value={localStartTime}
-                onChange={(e) => setLocalStartTime(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="MM:SS.mmm"
-              />
+        <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          {/* Time inputs with visual controls */}
+          <div className="space-y-4">
+            {/* Start Time Controls */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => adjustStartTime(-0.2)}
+                  className="px-3 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                  title="Subtract 0.2s"
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  value={localStartTime}
+                  onChange={(e) => setLocalStartTime(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-center"
+                  placeholder="MM:SS.mmm"
+                />
+                <button
+                  onClick={() => adjustStartTime(0.2)}
+                  className="px-3 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  title="Add 0.2s"
+                >
+                  +
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 text-center">
+                Click − or + to adjust by 0.2 seconds
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">End Time</label>
-              <input
-                type="text"
-                value={localEndTime}
-                onChange={(e) => setLocalEndTime(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="MM:SS.mmm"
-              />
+
+            {/* End Time Controls */}
+            <div className="bg-white rounded-lg p-3 border border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => adjustEndTime(-0.2)}
+                  className="px-3 py-2 text-sm font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                  title="Subtract 0.2s"
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  value={localEndTime}
+                  onChange={(e) => setLocalEndTime(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-center"
+                  placeholder="MM:SS.mmm"
+                />
+                <button
+                  onClick={() => adjustEndTime(0.2)}
+                  className="px-3 py-2 text-sm font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  title="Add 0.2s"
+                >
+                  +
+                </button>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 text-center">
+                Click − or + to adjust by 0.2 seconds
+              </div>
             </div>
+          </div>
+
+          {/* Duration display with validation */}
+          <div className={`rounded-lg p-3 border ${
+            isValidTimeRange()
+              ? 'bg-green-50 border-green-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Duration:</span>
+              <div className="flex items-center space-x-2">
+                <span className={`font-mono font-semibold ${
+                  isValidTimeRange() ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {getDuration().toFixed(2)}s
+                </span>
+                {isValidTimeRange() ? (
+                  <span className="text-green-600">✓</span>
+                ) : (
+                  <span className="text-red-600">⚠️</span>
+                )}
+              </div>
+            </div>
+            {!isValidTimeRange() && (
+              <div className="text-xs text-red-600 mt-1">
+                End time must be after start time
+              </div>
+            )}
           </div>
 
           {/* Text input */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Text</label>
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700">Segment Text</label>
             <textarea
               value={localText}
               onChange={(e) => setLocalText(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white resize-none"
               rows={3}
-              placeholder="Segment text..."
+              placeholder="Enter segment text..."
             />
+            <div className="text-xs text-gray-500">
+              Characters: {localText.length}
+            </div>
           </div>
 
           {/* Action buttons */}
-          <div className="flex space-x-2">
-            <button
-              onClick={handleSaveEdit}
-              className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-            >
-              Save
-            </button>
-            <button
-              onClick={handleCancelEdit}
-              className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+            <div className="text-xs text-gray-500">
+              Make sure end time is after start time
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={!isValidTimeRange() || !localText.trim()}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${
+                  isValidTimeRange() && localText.trim()
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                💾 Save Changes
+              </button>
+            </div>
           </div>
         </div>
       ) : (
