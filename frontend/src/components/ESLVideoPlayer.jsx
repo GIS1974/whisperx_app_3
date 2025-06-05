@@ -35,7 +35,8 @@ export const ESLVideoPlayer = ({
         start: segment.start,
         end: segment.end,
         text: segment.text?.trim() || '', // Ensure text is always a string
-        duration: segment.end - segment.start
+        duration: segment.end - segment.start,
+        words: segment.words || [] // Include word-level timing data if available
       }));
       setSegments(parsedSegments);
 
@@ -43,6 +44,7 @@ export const ESLVideoPlayer = ({
       console.log('ESL Player - Parsed segments:', parsedSegments.length);
       if (parsedSegments.length > 0) {
         console.log('ESL Player - Sample segment:', parsedSegments[0]);
+        console.log('ESL Player - Word-level data available:', parsedSegments[0].words?.length > 0);
         console.log('ESL Player - Setting current segment to 0');
         setCurrentSegment(0);
       }
@@ -238,6 +240,58 @@ export const ESLVideoPlayer = ({
 
 
 
+  // Calculate precise timing for segment playback using word-level data
+  const calculatePreciseTiming = (segment) => {
+    const BUFFER_TIME = 0.15; // 150ms buffer before first word and after last word
+
+    // If no word-level data is available, use segment timing with small buffer
+    if (!segment.words || segment.words.length === 0) {
+      return {
+        startTime: Math.max(0, segment.start - BUFFER_TIME),
+        endTime: segment.end + BUFFER_TIME,
+        duration: (segment.end + BUFFER_TIME) - Math.max(0, segment.start - BUFFER_TIME)
+      };
+    }
+
+    // Find first and last words with valid timing
+    const wordsWithTiming = segment.words.filter(word =>
+      word.start !== undefined && word.end !== undefined &&
+      word.start !== null && word.end !== null
+    );
+
+    if (wordsWithTiming.length === 0) {
+      // Fallback to segment timing if no valid word timing
+      return {
+        startTime: Math.max(0, segment.start - BUFFER_TIME),
+        endTime: segment.end + BUFFER_TIME,
+        duration: (segment.end + BUFFER_TIME) - Math.max(0, segment.start - BUFFER_TIME)
+      };
+    }
+
+    // Use first word start time and last word end time with buffers
+    const firstWordStart = wordsWithTiming[0].start;
+    const lastWordEnd = wordsWithTiming[wordsWithTiming.length - 1].end;
+
+    const preciseStartTime = Math.max(0, firstWordStart - BUFFER_TIME);
+    const preciseEndTime = lastWordEnd + BUFFER_TIME;
+
+    console.log('Precise timing calculated:', {
+      segmentStart: segment.start,
+      segmentEnd: segment.end,
+      firstWordStart,
+      lastWordEnd,
+      preciseStartTime,
+      preciseEndTime,
+      wordsCount: wordsWithTiming.length
+    });
+
+    return {
+      startTime: preciseStartTime,
+      endTime: preciseEndTime,
+      duration: preciseEndTime - preciseStartTime
+    };
+  };
+
   // Handle video end
   const handleVideoEnd = () => {
     setIsPlaying(false);
@@ -266,10 +320,22 @@ export const ESLVideoPlayer = ({
       clearTimeout(segmentTimeoutRef.current);
     }
 
-    playerRef.current.currentTime(segment.start);
+    // Calculate precise timing for repeat mode, use regular timing for other modes
+    const timing = playbackMode === 'repeat'
+      ? calculatePreciseTiming(segment)
+      : {
+          startTime: segment.start,
+          endTime: segment.end,
+          duration: segment.duration
+        };
+
+    console.log(`Playing segment ${segmentIndex} in ${playbackMode} mode:`, timing);
+
+    // Set player to precise start time
+    playerRef.current.currentTime(timing.startTime);
     playerRef.current.play();
 
-    // Set timeout to pause at segment end
+    // Set timeout to pause at precise end time
     segmentTimeoutRef.current = setTimeout(() => {
       if (playerRef.current) {
         playerRef.current.pause();
@@ -277,7 +343,7 @@ export const ESLVideoPlayer = ({
           onSegmentComplete(segmentIndex, segment);
         }
       }
-    }, (segment.duration * 1000) / playbackSpeed);
+    }, (timing.duration * 1000) / playbackSpeed);
   };
 
   // Play current segment
@@ -394,6 +460,9 @@ export const ESLVideoPlayer = ({
               {/* Debug info - remove in production */}
               <div className="text-xs text-gray-300 mt-2 opacity-50">
                 Segment: {currentSegment + 1}/{segments.length} | Force: {forceSubtitleDisplay ? 'Y' : 'N'} | Time: {playerRef.current ? playerRef.current.currentTime()?.toFixed(1) : 'N/A'}
+                {currentSegmentData?.words?.length > 0 && (
+                  <span className="block">Words: {currentSegmentData.words.length} | Mode: {playbackMode}</span>
+                )}
               </div>
             </div>
           </div>
@@ -440,6 +509,9 @@ export const ESLVideoPlayer = ({
                 Segment {currentSegment + 1} of {segments.length}
                 {currentSegmentData && (
                   <span className="ml-2">• {currentSegmentData.duration.toFixed(1)}s</span>
+                )}
+                {playbackMode === 'repeat' && currentSegmentData?.words?.length > 0 && (
+                  <span className="ml-2 text-blue-600">• Word-level timing</span>
                 )}
               </p>
             </div>
@@ -504,7 +576,12 @@ export const ESLVideoPlayer = ({
                   </svg>
                 </div>
                 <div className="text-sm font-medium">Repeat Mode</div>
-                <div className="text-xs text-gray-500 mt-1">Practice segments</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Practice segments
+                  {currentSegmentData?.words?.length > 0 && (
+                    <span className="block text-blue-600">with precise timing</span>
+                  )}
+                </div>
               </button>
             </div>
           </div>
