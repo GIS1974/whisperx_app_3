@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { WordHighlighter } from './WordHighlighter';
 
@@ -21,6 +21,7 @@ export const ESLVideoPlayer = ({
   const [showTranscript, setShowTranscript] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showWordHighlighting, setShowWordHighlighting] = useState(true);
+  const [forceSubtitleDisplay, setForceSubtitleDisplay] = useState(false);
   
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
@@ -38,9 +39,11 @@ export const ESLVideoPlayer = ({
       setSegments(parsedSegments);
 
       // Debug log to check for text truncation issues
-      console.log('Parsed segments:', parsedSegments.length);
+      console.log('ESL Player - Parsed segments:', parsedSegments.length);
       if (parsedSegments.length > 0) {
-        console.log('Sample segment:', parsedSegments[0]);
+        console.log('ESL Player - Sample segment:', parsedSegments[0]);
+        console.log('ESL Player - Setting current segment to 0');
+        setCurrentSegment(0);
       }
     }
   }, [transcription]);
@@ -52,6 +55,44 @@ export const ESLVideoPlayer = ({
       // Don't auto-play here since it will be triggered by the parent
     }
   }, [selectedSegmentIndex]);
+
+  // Initialize subtitle display based on current video time
+  const initializeSubtitleDisplay = useCallback(() => {
+    if (!playerRef.current || segments.length === 0) return;
+
+    const currentTime = playerRef.current.currentTime();
+    const activeSegment = segments.findIndex(segment =>
+      currentTime >= segment.start && currentTime <= segment.end
+    );
+
+    // Set the current segment based on video time, or default to first segment
+    const segmentToShow = activeSegment !== -1 ? activeSegment : 0;
+
+    if (segmentToShow !== currentSegment) {
+      setCurrentSegment(segmentToShow);
+      if (onProgress) {
+        onProgress(segmentToShow, segments[segmentToShow]);
+      }
+      if (onSegmentChange) {
+        onSegmentChange(segmentToShow, segments[segmentToShow]);
+      }
+    }
+
+    console.log('Initialized subtitle display:', segmentToShow, segments[segmentToShow]?.text);
+  }, [segments, currentSegment, onProgress, onSegmentChange]);
+
+  // Initialize subtitle display when segments are loaded
+  useEffect(() => {
+    if (segments.length > 0) {
+      // Force subtitle display when segments become available
+      setForceSubtitleDisplay(true);
+      if (playerRef.current) {
+        setTimeout(() => {
+          initializeSubtitleDisplay();
+        }, 100);
+      }
+    }
+  }, [segments, initializeSubtitleDisplay]);
 
   // Force subtitle update when current segment changes
   useEffect(() => {
@@ -104,13 +145,13 @@ export const ESLVideoPlayer = ({
     player.on('pause', () => setIsPlaying(false));
     player.on('ended', handleVideoEnd);
 
-    // Initialize subtitle display by triggering a time update
+    // Initialize subtitle display immediately
     setTimeout(() => {
-      if (segments.length > 0 && currentSegment >= 0) {
-        handleTimeUpdate();
-      }
-    }, 500);
+      initializeSubtitleDisplay();
+    }, 100);
   };
+
+
 
   // Handle time updates to track current segment
   const handleTimeUpdate = () => {
@@ -208,6 +249,9 @@ export const ESLVideoPlayer = ({
         playSegment(segmentIndex);
       }
     }
+
+    // Force subtitle update immediately
+    console.log('Navigated to segment:', segmentIndex, segments[segmentIndex]?.text);
   };
 
   // Toggle playback modes
@@ -264,7 +308,8 @@ export const ESLVideoPlayer = ({
     }
   }, [segments, onPlayerReady, showWordHighlighting]);
 
-  const currentSegmentData = segments[currentSegment];
+  // Get current segment data with fallback
+  const currentSegmentData = segments[currentSegment] || (segments.length > 0 ? segments[0] : null);
 
   return (
     <div className={`esl-video-player ${className}`}>
@@ -278,12 +323,16 @@ export const ESLVideoPlayer = ({
         />
 
         {/* Subtitle Overlay - Positioned over video with transparency */}
-        {currentSegmentData && showTranscript && currentSegmentData.text && (
+        {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
             <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-4 text-center shadow-2xl border border-white/20">
               <p className="text-2xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap">
-                {currentSegmentData.text}
+                {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
               </p>
+              {/* Debug info - remove in production */}
+              <div className="text-xs text-gray-300 mt-2 opacity-50">
+                Segment: {currentSegment + 1}/{segments.length} | Force: {forceSubtitleDisplay ? 'Y' : 'N'}
+              </div>
             </div>
           </div>
         )}
