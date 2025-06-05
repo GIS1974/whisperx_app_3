@@ -290,7 +290,7 @@ export const PlayerPage = () => {
           {/* Video Player Column - Takes 2/3 width on xl screens */}
           <div className="xl:col-span-2 space-y-6 min-h-0">
             {/* ESL Video Player with integrated controls */}
-            <div className="sticky top-4">
+            <div>
               <ESLVideoPlayer
                 mediaFile={mediaFile}
                 transcription={transcription}
@@ -313,24 +313,24 @@ export const PlayerPage = () => {
             {transcription && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Transcript</h3>
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => downloadSubtitle('vtt')}
                     className="btn-primary text-sm"
                   >
-                    Download VTT
+                    📄 Download VTT
                   </button>
                   <button
                     onClick={() => downloadSubtitle('srt')}
                     className="btn-primary text-sm"
                   >
-                    Download SRT
+                    📄 Download SRT
                   </button>
                   <button
                     onClick={() => downloadSubtitle('txt')}
                     className="btn-primary text-sm"
                   >
-                    Download TXT
+                    📄 Download TXT
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
