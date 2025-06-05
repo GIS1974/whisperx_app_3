@@ -20,7 +20,7 @@
 
 /* Ensure player container stays in view */
 .esl-video-player {
-  scroll-margin-top: 2rem;
+  scroll-margin-top: 5rem;
 }
 
 /* Fix layout stability */
@@ -41,11 +41,38 @@
 .transcript-panel {
   overflow-y: auto;
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.transcript-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.transcript-panel::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.transcript-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.transcript-panel::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 }
 
 /* Smooth scrolling for active segment */
 .transcript-panel .group {
   scroll-margin-top: 1rem;
+}
+
+/* Player sticky positioning */
+.esl-video-player .sticky {
+  position: sticky;
+  top: 5rem;
+  z-index: 10;
 }
 
 /* Focus mode styling */

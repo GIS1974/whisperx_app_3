@@ -287,11 +287,11 @@ export const PlayerPage = () => {
 
       {/* ESL Video Player */}
       {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-8rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-6rem)]">
           {/* Video Player Column - Takes 2/3 width on lg screens */}
           <div className="lg:col-span-2 space-y-6 min-h-0">
             {/* ESL Video Player with integrated controls */}
-            <div>
+            <div className="h-full overflow-y-auto">
               <ESLVideoPlayer
                 mediaFile={mediaFile}
                 transcription={transcription}
@@ -358,23 +358,29 @@ export const PlayerPage = () => {
 
           {/* Transcript Panel Column - 1/3 width on lg screens */}
           <div className="lg:col-span-1 min-h-0">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-8rem)] flex flex-col overflow-hidden sticky top-20">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-6rem)] flex flex-col overflow-hidden sticky top-20">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
-                  <button
-                    onClick={() => setFocusMode(!focusMode)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      focusMode
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    title="Toggle Focus Mode"
-                  >
-                    {focusMode ? '🎯 Focus' : '📖 Normal'}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700">Focus Mode</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={focusMode}
+                        onChange={(e) => setFocusMode(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">Click any segment to jump to that part</p>
+                <p className="text-sm text-gray-600">
+                  {focusMode
+                    ? "Showing segments around current position • Free scrolling disabled"
+                    : "Click any segment to jump to that part • Free scrolling enabled"
+                  }
+                </p>
               </div>
 
               <div className="flex-1 overflow-hidden">

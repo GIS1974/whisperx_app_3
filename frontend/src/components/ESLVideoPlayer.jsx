@@ -497,9 +497,9 @@ export const ESLVideoPlayer = ({
   const currentSegmentData = segments[currentSegment] || (segments.length > 0 ? segments[0] : null);
 
   return (
-    <div className={`esl-video-player ${className}`}>
-      {/* Main Video Player Container with Modern Styling */}
-      <div className="relative mb-6 bg-black rounded-2xl overflow-hidden shadow-2xl">
+    <div className={`esl-video-player ${className} flex flex-col`}>
+      {/* Main Video Player Container with Modern Styling - Sticky */}
+      <div className="relative mb-6 bg-black rounded-2xl overflow-hidden shadow-2xl sticky top-20 z-10">
         <VideoPlayer
           mediaFile={mediaFile}
           transcription={transcription}
@@ -548,8 +548,8 @@ export const ESLVideoPlayer = ({
         </div>
       </div>
 
-      {/* Modern ESL Controls */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+      {/* Modern ESL Controls - Scrollable */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-h-[60vh] overflow-y-auto">
         {/* Header with Segment Info */}
         <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">

@@ -70,12 +70,13 @@ export const TranscriptPanel = ({
 
     // Apply focus mode filter first (show only active segment and nearby ones)
     if (focusMode && activeSegmentIndex >= 0) {
-      const focusRange = 2; // Show 2 segments before and after active segment
+      const focusRange = 3; // Show 3 segments before and after active segment
       const startIndex = Math.max(0, activeSegmentIndex - focusRange);
       const endIndex = Math.min(sourceSegments.length - 1, activeSegmentIndex + focusRange);
 
       filtered = sourceSegments.slice(startIndex, endIndex + 1);
     }
+    // When focus mode is off, show all segments (free scrolling)
 
     // Then apply search filter
     if (searchTerm.trim()) {
@@ -168,9 +169,10 @@ export const TranscriptPanel = ({
     );
   };
 
-  // Auto-scroll to active segment (only within transcript panel)
+  // Auto-scroll to active segment (only when focus mode is enabled)
   useEffect(() => {
-    if (activeSegmentRef.current) {
+    // Only auto-scroll when focus mode is enabled
+    if (focusMode && activeSegmentRef.current) {
       // Find the transcript panel container
       const transcriptPanel = activeSegmentRef.current.closest('.transcript-panel');
       if (transcriptPanel) {
@@ -185,7 +187,7 @@ export const TranscriptPanel = ({
         });
       }
     }
-  }, [activeSegmentIndex]);
+  }, [activeSegmentIndex, focusMode]);
 
   // Load word-level data for highlighting
   useEffect(() => {
