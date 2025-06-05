@@ -62,8 +62,8 @@ export const ESLVideoPlayer = ({
   // Calculate precise timing for segment playback using word-level data
   const calculatePreciseTiming = useCallback((segment) => {
     const START_BUFFER = 0.15; // 150ms buffer before first word
-    const END_BUFFER = 0.25;   // 250ms buffer after last word (increased for better coverage)
-    const MIN_END_BUFFER = 0.1; // Minimum buffer to ensure natural completion
+    const END_BUFFER = 0.3;    // 300ms buffer after last word (balanced for complete playback)
+    const MIN_END_BUFFER = 0.15; // Minimum buffer to ensure natural completion
 
     // If no word-level data is available, use segment timing with small buffer
     if (!segment.words || segment.words.length === 0) {
@@ -359,15 +359,27 @@ export const ESLVideoPlayer = ({
     playerRef.current.currentTime(timing.startTime);
     playerRef.current.play();
 
-    // Set timeout to pause at precise end time
-    segmentTimeoutRef.current = setTimeout(() => {
-      if (playerRef.current) {
+    // Use a more reliable approach: check current time periodically instead of relying on timeout duration
+    const checkEndTime = () => {
+      if (!playerRef.current) return;
+
+      const currentTime = playerRef.current.currentTime();
+
+      // Check if we've reached or passed the end time
+      if (currentTime >= timing.endTime) {
         playerRef.current.pause();
         if (onSegmentComplete) {
           onSegmentComplete(segmentIndex, segment);
         }
+        return;
       }
-    }, (timing.duration * 1000) / playbackSpeed);
+
+      // Continue checking every 50ms for precise timing
+      segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
+    };
+
+    // Start checking after a small delay to ensure playback has started
+    segmentTimeoutRef.current = setTimeout(checkEndTime, 100);
   };
 
   // Play current segment
