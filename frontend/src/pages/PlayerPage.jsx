@@ -286,9 +286,9 @@ export const PlayerPage = () => {
 
       {/* ESL Video Player */}
       {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-screen">
-          {/* Video Player Column */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Video Player Column - Takes 2/3 width on xl screens */}
+          <div className="xl:col-span-2 space-y-6">
             {/* ESL Video Player with integrated controls */}
             <ESLVideoPlayer
               mediaFile={mediaFile}
@@ -353,53 +353,58 @@ export const PlayerPage = () => {
             )}
           </div>
 
-          {/* Transcript Panel Column - Full Height */}
-          <div className="h-full">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-full flex flex-col">
-              {transcription ? (
-                <TranscriptPanel
-                  segments={segments}
-                  activeSegmentIndex={activeSegmentIndex}
-                  currentTime={currentTime}
-                  onSegmentClick={handleSegmentClick}
-                  onWordClick={(time, word) => {
-                    // Find the segment containing this word and select it
-                    const segmentIndex = segments.findIndex(segment =>
-                      time >= segment.start && time <= segment.end
-                    );
+          {/* Transcript Panel Column - 1/3 width on xl screens */}
+          <div className="xl:col-span-1">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-12rem)] flex flex-col overflow-hidden">
+              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
+                <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
+                <p className="text-sm text-gray-600 mt-1">Click any segment to jump to that part</p>
+              </div>
 
-                    if (segmentIndex !== -1) {
-                      const segment = segments[segmentIndex];
-                      setActiveSegmentIndex(segmentIndex);
-                      setCurrentSegment(segment);
+              <div className="flex-1 overflow-hidden">
+                {transcription ? (
+                  <TranscriptPanel
+                    segments={segments}
+                    activeSegmentIndex={activeSegmentIndex}
+                    currentTime={currentTime}
+                    onSegmentClick={handleSegmentClick}
+                    onWordClick={(time, word) => {
+                      // Find the segment containing this word and select it
+                      const segmentIndex = segments.findIndex(segment =>
+                        time >= segment.start && time <= segment.end
+                      );
 
-                      // Trigger playback through ESLVideoPlayer
-                      if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
-                        eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                      if (segmentIndex !== -1) {
+                        const segment = segments[segmentIndex];
+                        setActiveSegmentIndex(segmentIndex);
+                        setCurrentSegment(segment);
+
+                        // Trigger playback through ESLVideoPlayer
+                        if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
+                          eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                        }
                       }
-                    }
-                  }}
-                  showSearch={true}
-                  showStats={true}
-                  mediaFileId={mediaFile.id}
-                  transcriptionId={transcription.id}
-                  onTranscriptionUpdate={fetchTranscription}
-                  // Word highlighting props
-                  playerRef={eslVideoPlayerAPI?.playerRef}
-                  transcription={transcription}
-                  showWordHighlighting={(() => {
-                    const value = eslVideoPlayerAPI?.showWordHighlighting || false;
-                    console.log('TranscriptPanel showWordHighlighting prop:', value);
-                    return value;
-                  })()}
-                />
-              ) : (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Transcript</h3>
-                  <p className="text-gray-500">Transcript will appear here once transcription data is loaded.</p>
-                </div>
-              )}
+                    }}
+                    showSearch={true}
+                    showStats={true}
+                    mediaFileId={mediaFile.id}
+                    transcriptionId={transcription.id}
+                    onTranscriptionUpdate={fetchTranscription}
+                    // Word highlighting props - disabled for now
+                    playerRef={eslVideoPlayerAPI?.playerRef}
+                    transcription={transcription}
+                    showWordHighlighting={false}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full p-8">
+                    <div className="text-center">
+                      <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Transcript</h3>
+                      <p className="text-gray-500">Transcript will appear here once transcription data is loaded.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

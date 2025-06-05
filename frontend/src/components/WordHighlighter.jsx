@@ -364,39 +364,19 @@ export const WordHighlighter = ({
     );
   }
 
+  // For now, just show basic subtitles without word highlighting
   return (
-    <div className={`word-highlighter ${className}`} ref={overlayRef} style={{ zIndex: 10, pointerEvents: 'none' }}>
-      {/* Subtitle-style display showing full segment with word highlighting */}
+    <div className={`subtitle-overlay ${className}`} ref={overlayRef} style={{ zIndex: 100, pointerEvents: 'none' }}>
+      {/* Modern subtitle display positioned over video */}
       {displayData ? (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-5xl w-full px-4">
-          <div className="bg-black/85 backdrop-blur-sm rounded-lg px-6 py-4 text-center shadow-lg border border-white/20">
-            <div
-              className="text-xl leading-relaxed text-white font-medium"
-              dangerouslySetInnerHTML={{ __html: displayData.highlightedText }}
-            />
-          </div>
-        </div>
-      ) : (
-        /* Show a test subtitle when no data is available */
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-5xl w-full px-4">
-          <div className="bg-red-600/85 backdrop-blur-sm rounded-lg px-6 py-4 text-center shadow-lg border border-white/20">
-            <div className="text-xl leading-relaxed text-white font-medium">
-              No subtitle data available (Time: {currentTime.toFixed(1)}s)
+        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6">
+          <div className="bg-black/80 backdrop-blur-sm rounded-xl px-8 py-4 text-center shadow-2xl border border-white/10">
+            <div className="text-2xl leading-relaxed text-white font-medium tracking-wide">
+              {displayData.segment.text}
             </div>
           </div>
         </div>
-      )}
-
-      {/* Debug info (can be removed in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-4 left-4 text-xs text-yellow-300 bg-black/60 p-2 rounded max-w-md pointer-events-auto">
-          Words loaded: {wordLevelData.length} | Current word index: {currentWordIndex}
-          {displayData ? ` | Segment: "${displayData.segment.text.substring(0, 30)}..."` : ' | No segment found'}
-          {currentWordIndex >= 0 && wordLevelData[currentWordIndex] && (
-            <div>Current word: "{wordLevelData[currentWordIndex].word}" at {wordLevelData[currentWordIndex].start.toFixed(2)}s</div>
-          )}
-        </div>
-      )}
+      ) : null}
     </div>
   );
 };
