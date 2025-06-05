@@ -24,6 +24,7 @@ export const PlayerPage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
   const [currentSegment, setCurrentSegment] = useState(null);
+  const [focusMode, setFocusMode] = useState(false);
 
   useEffect(() => {
     fetchMediaFile();
@@ -286,9 +287,9 @@ export const PlayerPage = () => {
 
       {/* ESL Video Player */}
       {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 min-h-0">
-          {/* Video Player Column - Takes 2/3 width on xl screens */}
-          <div className="xl:col-span-2 space-y-6 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-8rem)]">
+          {/* Video Player Column - Takes 2/3 width on lg screens */}
+          <div className="lg:col-span-2 space-y-6 min-h-0">
             {/* ESL Video Player with integrated controls */}
             <div>
               <ESLVideoPlayer
@@ -355,12 +356,25 @@ export const PlayerPage = () => {
             )}
           </div>
 
-          {/* Transcript Panel Column - 1/3 width on xl screens */}
-          <div className="xl:col-span-1 min-h-0">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-12rem)] flex flex-col overflow-hidden sticky top-4">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 flex-shrink-0">
-                <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
-                <p className="text-sm text-gray-600 mt-1">Click any segment to jump to that part</p>
+          {/* Transcript Panel Column - 1/3 width on lg screens */}
+          <div className="lg:col-span-1 min-h-0">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-8rem)] flex flex-col overflow-hidden sticky top-20">
+              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
+                  <button
+                    onClick={() => setFocusMode(!focusMode)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      focusMode
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title="Toggle Focus Mode"
+                  >
+                    {focusMode ? '🎯 Focus' : '📖 Normal'}
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600">Click any segment to jump to that part</p>
               </div>
 
               <div className="flex-1 overflow-hidden">
@@ -392,6 +406,7 @@ export const PlayerPage = () => {
                     mediaFileId={mediaFile.id}
                     transcriptionId={transcription.id}
                     onTranscriptionUpdate={fetchTranscription}
+                    focusMode={focusMode}
                     // Word highlighting props - disabled for now
                     playerRef={eslVideoPlayerAPI?.playerRef}
                     transcription={transcription}

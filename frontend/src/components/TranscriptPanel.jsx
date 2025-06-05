@@ -16,6 +16,7 @@ export const TranscriptPanel = ({
   mediaFileId,
   transcriptionId,
   onTranscriptionUpdate,
+  focusMode = false,
   // Word highlighting props
   playerRef = null,
   transcription = null,
@@ -53,7 +54,7 @@ export const TranscriptPanel = ({
     }
   }, [segments, hasUnsavedChanges, editedSegments.length]);
 
-  // Update filtered segments when segments or search term changes
+  // Update filtered segments when segments, search term, or focus mode changes
   useEffect(() => {
     // Always use the most recent segments data
     // If we have editedSegments and they're not empty, use those
@@ -65,15 +66,26 @@ export const TranscriptPanel = ({
       return;
     }
 
-    if (!searchTerm.trim()) {
-      setFilteredSegments(sourceSegments);
-    } else {
-      const filtered = sourceSegments.filter(segment =>
+    let filtered = sourceSegments;
+
+    // Apply focus mode filter first (show only active segment and nearby ones)
+    if (focusMode && activeSegmentIndex >= 0) {
+      const focusRange = 2; // Show 2 segments before and after active segment
+      const startIndex = Math.max(0, activeSegmentIndex - focusRange);
+      const endIndex = Math.min(sourceSegments.length - 1, activeSegmentIndex + focusRange);
+
+      filtered = sourceSegments.slice(startIndex, endIndex + 1);
+    }
+
+    // Then apply search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(segment =>
         segment.text.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredSegments(filtered);
     }
-  }, [segments, editedSegments, searchTerm]);
+
+    setFilteredSegments(filtered);
+  }, [segments, editedSegments, searchTerm, focusMode, activeSegmentIndex]);
 
   // Word highlighting helper functions (defined before useEffects that use them)
   const parseWordLevelVTT = useCallback((vttText) => {
@@ -156,13 +168,22 @@ export const TranscriptPanel = ({
     );
   };
 
-  // Auto-scroll to active segment
+  // Auto-scroll to active segment (only within transcript panel)
   useEffect(() => {
     if (activeSegmentRef.current) {
-      activeSegmentRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
+      // Find the transcript panel container
+      const transcriptPanel = activeSegmentRef.current.closest('.transcript-panel');
+      if (transcriptPanel) {
+        // Scroll within the transcript panel only
+        const elementTop = activeSegmentRef.current.offsetTop;
+        const panelHeight = transcriptPanel.clientHeight;
+        const scrollTop = elementTop - (panelHeight / 2);
+
+        transcriptPanel.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'smooth'
+        });
+      }
     }
   }, [activeSegmentIndex]);
 
@@ -645,24 +666,29 @@ const EditableSegment = React.forwardRef(({
         // View mode
         <div
           onClick={() => !isEditMode && onSegmentClick(segment)}
-          className={`flex items-start space-x-3 p-2 rounded-lg transition-colors ${
+          className={`group flex items-start space-x-4 p-4 rounded-xl transition-all duration-200 ${
             !isEditMode
-              ? 'cursor-pointer hover:bg-gray-50'
+              ? 'cursor-pointer hover:bg-slate-50 hover:shadow-sm'
               : ''
           } ${
             isActive
-              ? 'bg-blue-50 border-l-4 border-blue-500'
-              : ''
+              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 shadow-sm'
+              : 'hover:border-l-4 hover:border-gray-200'
           }`}
         >
-          <span className="text-xs text-gray-500 font-mono mt-1 flex-shrink-0">
-            {formatTimestamp(segment.start)}
-          </span>
+          <div className="flex flex-col items-center space-y-1 flex-shrink-0">
+            <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded-md">
+              {formatTimestamp(segment.start)}
+            </span>
+            {isActive && (
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            )}
+          </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Speaker label if available */}
             {segment.speaker && (
-              <div className="text-xs font-medium text-primary-600 mb-1">
+              <div className="text-xs font-medium text-blue-600 mb-2 bg-blue-100 px-2 py-1 rounded-md inline-block">
                 {segment.speaker}
               </div>
             )}
@@ -670,7 +696,7 @@ const EditableSegment = React.forwardRef(({
             {/* Segment text */}
             <div className="text-sm text-gray-900 leading-relaxed">
               {/* Only use search highlighting, no word highlighting in transcript panel */}
-              <span>{highlightSearchTerm(segment.text)}</span>
+              <span className="break-words">{highlightSearchTerm(segment.text)}</span>
             </div>
 
             {/* Edit button in edit mode */}
@@ -680,9 +706,9 @@ const EditableSegment = React.forwardRef(({
                   e.stopPropagation();
                   onStartEdit();
                 }}
-                className="mt-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                className="mt-3 px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
               >
-                Edit
+                ✏️ Edit
               </button>
             )}
           </div>

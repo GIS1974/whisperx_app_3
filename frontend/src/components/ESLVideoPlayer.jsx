@@ -509,23 +509,11 @@ export const ESLVideoPlayer = ({
 
         {/* Subtitle Overlay - Positioned over video with transparency */}
         {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
-            <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-8 py-4 text-center shadow-2xl border border-white/20">
-              <p className="text-2xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap">
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-5xl px-6 pointer-events-none">
+            <div className="bg-black/70 backdrop-blur-md rounded-2xl px-8 py-6 text-center shadow-2xl border border-white/10">
+              <p className="text-2xl md:text-3xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
                 {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
               </p>
-              {/* Debug info - remove in production */}
-              <div className="text-xs text-gray-300 mt-2 opacity-50">
-                Segment: {currentSegment + 1}/{segments.length} | Force: {forceSubtitleDisplay ? 'Y' : 'N'} | Time: {playerRef.current ? playerRef.current.currentTime()?.toFixed(1) : 'N/A'}
-                {currentSegmentData?.words?.length > 0 && (
-                  <span className="block">
-                    Words: {currentSegmentData.words.length} | Mode: {playbackMode}
-                    {playbackMode === 'repeat' && (
-                      <span className="ml-2 text-blue-400">Enhanced timing</span>
-                    )}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
         )}
@@ -563,22 +551,19 @@ export const ESLVideoPlayer = ({
       {/* Modern ESL Controls */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         {/* Header with Segment Info */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">ESL Learning Controls</h3>
+              <h3 className="text-lg font-bold text-gray-900">Learning Controls</h3>
               <p className="text-sm text-gray-600">
                 Segment {currentSegment + 1} of {segments.length}
                 {currentSegmentData && (
                   <span className="ml-2">• {currentSegmentData.duration.toFixed(1)}s</span>
                 )}
-                {currentSegmentData?.words?.length > 0 && (
-                  <span className="ml-2 text-blue-600">• Enhanced timing active</span>
-                )}
               </p>
             </div>
             {playbackMode === 'repeat' && (
-              <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+              <div className="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-sm font-medium">
                 Repeat {repeatCount + 1}/{maxRepeats}
               </div>
             )}
@@ -588,8 +573,8 @@ export const ESLVideoPlayer = ({
         <div className="p-6">
           {/* Learning Mode Selection */}
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Learning Mode</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Learning Mode</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
                 onClick={() => setMode('normal')}
                 className={`group relative p-4 rounded-xl border-2 transition-all duration-200 ${
@@ -650,15 +635,15 @@ export const ESLVideoPlayer = ({
 
           {/* Segment Navigation */}
           <div className="mb-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Segment Navigation</h4>
-            <div className="flex items-center justify-center gap-3">
+            <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Navigation</h4>
+            <div className="flex items-center justify-center gap-4">
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   goToPreviousSegment(e);
                 }}
                 disabled={currentSegment === 0}
-                className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                 title="Previous Segment"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -671,7 +656,7 @@ export const ESLVideoPlayer = ({
                   e.preventDefault();
                   playCurrentSegment();
                 }}
-                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors duration-200 flex items-center gap-2"
+                className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -685,7 +670,7 @@ export const ESLVideoPlayer = ({
                   goToNextSegment(e);
                 }}
                 disabled={currentSegment === segments.length - 1}
-                className="p-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                 title="Next Segment"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -31,10 +31,45 @@
   min-height: 0;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   .player-layout-container {
     grid-template-columns: 2fr 1fr;
   }
+}
+
+/* Prevent page scrolling on segment navigation */
+.transcript-panel {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+/* Smooth scrolling for active segment */
+.transcript-panel .group {
+  scroll-margin-top: 1rem;
+}
+
+/* Focus mode styling */
+.focus-mode .transcript-panel {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Enhanced segment hover effects */
+.transcript-panel .group:hover {
+  transform: translateX(2px);
+}
+
+/* Active segment pulse animation */
+@keyframes pulse-blue {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Transcript Panel Styles */

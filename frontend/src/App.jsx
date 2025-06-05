@@ -23,7 +23,7 @@ function App() {
         <div className="min-h-screen bg-gray-50">
           <Navbar />
 
-          <main className="container mx-auto px-4 py-8 max-w-7xl">
+          <main className="w-full px-6 py-8">
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
