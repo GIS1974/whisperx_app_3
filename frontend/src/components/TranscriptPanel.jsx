@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { formatTimestamp } from '../utils/formatters';
 import { LoadingSpinner } from './LoadingSpinner';
 import { transcriptionAPI } from '../services/api';
@@ -15,7 +15,11 @@ export const TranscriptPanel = ({
   showStats = true,
   mediaFileId,
   transcriptionId,
-  onTranscriptionUpdate
+  onTranscriptionUpdate,
+  // Word highlighting props
+  playerRef = null,
+  transcription = null,
+  showWordHighlighting = false
 }) => {
   const activeSegmentRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +31,11 @@ export const TranscriptPanel = ({
   const [editingSegmentIndex, setEditingSegmentIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Word highlighting state
+  const [wordLevelData, setWordLevelData] = useState([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  const [isLoadingWords, setIsLoadingWords] = useState(false);
 
   // Initialize edited segments when segments change
   useEffect(() => {
@@ -66,6 +75,87 @@ export const TranscriptPanel = ({
     }
   }, [segments, editedSegments, searchTerm]);
 
+  // Word highlighting helper functions (defined before useEffects that use them)
+  const parseWordLevelVTT = useCallback((vttText) => {
+    const lines = vttText.split('\n');
+    const words = [];
+    let i = 0;
+
+    const parseVTTTime = (timeString) => {
+      const [hours, minutes, seconds] = timeString.split(':');
+      return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+    };
+
+    while (i < lines.length) {
+      const line = lines[i].trim();
+
+      if (/^\d+$/.test(line)) {
+        i++; // Move to timing line
+
+        if (i < lines.length) {
+          const timingLine = lines[i].trim();
+          const timingMatch = timingLine.match(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+
+          if (timingMatch) {
+            const startTime = parseVTTTime(timingMatch[1]);
+            const endTime = parseVTTTime(timingMatch[2]);
+
+            i++; // Move to text line
+            if (i < lines.length) {
+              const textLine = lines[i].trim();
+
+              const wordMatch = textLine.match(/<c\.word-highlight>(.*?)<\/c>/);
+              const word = wordMatch ? wordMatch[1] : textLine.replace(/<[^>]*>/g, '');
+
+              if (word && word !== '¶¶') {
+                words.push({
+                  word: word.trim(),
+                  start: startTime,
+                  end: endTime,
+                  index: words.length
+                });
+              }
+            }
+          }
+        }
+      }
+      i++;
+    }
+
+    return words;
+  }, []);
+
+  const loadWordLevelData = useCallback(async () => {
+    if (!mediaFileId) return;
+
+    setIsLoadingWords(true);
+    try {
+      const vttText = await transcriptionAPI.getWordLevelVTT(mediaFileId);
+      console.log('Word-level VTT response type:', typeof vttText);
+      console.log('Word-level VTT response length:', vttText?.length);
+
+      if (!vttText || typeof vttText !== 'string') {
+        console.error('VTT text is not a string:', vttText);
+        return;
+      }
+
+      const words = parseWordLevelVTT(vttText);
+      console.log('Parsed words:', words.length, 'words');
+      console.log('First few words:', words.slice(0, 5));
+      setWordLevelData(words);
+    } catch (error) {
+      console.error('Error loading word-level data:', error);
+    } finally {
+      setIsLoadingWords(false);
+    }
+  }, [mediaFileId, parseWordLevelVTT]);
+
+  const findActiveWordIndex = (currentTime, words) => {
+    return words.findIndex(word =>
+      currentTime >= word.start && currentTime <= word.end
+    );
+  };
+
   // Auto-scroll to active segment
   useEffect(() => {
     if (activeSegmentRef.current) {
@@ -75,6 +165,46 @@ export const TranscriptPanel = ({
       });
     }
   }, [activeSegmentIndex]);
+
+  // Load word-level data for highlighting
+  useEffect(() => {
+    if (showWordHighlighting && transcription?.has_word_level_vtt && mediaFileId) {
+      loadWordLevelData();
+    }
+  }, [showWordHighlighting, transcription, mediaFileId, loadWordLevelData]);
+
+  // Set up time update listener for word highlighting
+  useEffect(() => {
+    if (!playerRef?.current || !wordLevelData.length || !showWordHighlighting) {
+      return;
+    }
+
+    const handleTimeUpdate = () => {
+      const currentTime = playerRef.current.currentTime();
+      const activeWordIndex = findActiveWordIndex(currentTime, wordLevelData);
+
+      if (activeWordIndex !== currentWordIndex) {
+        console.log('Word highlighting update:', {
+          currentTime,
+          activeWordIndex,
+          currentWord: wordLevelData[activeWordIndex],
+          showWordHighlighting
+        });
+        setCurrentWordIndex(activeWordIndex);
+      }
+    };
+
+    const player = playerRef.current;
+    player.on('timeupdate', handleTimeUpdate);
+
+    return () => {
+      player.off('timeupdate', handleTimeUpdate);
+    };
+  }, [playerRef, wordLevelData, currentWordIndex, showWordHighlighting]);
+
+  const escapeRegExp = (string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  };
 
   // Highlight search terms in text
   const highlightSearchTerm = (text) => {
@@ -90,6 +220,56 @@ export const TranscriptPanel = ({
         </mark>
       ) : part
     );
+  };
+
+  // Highlight current word in text
+  const highlightCurrentWord = (text, segmentIndex) => {
+    if (!showWordHighlighting || currentWordIndex === -1 || !wordLevelData[currentWordIndex]) {
+      return highlightSearchTerm(text);
+    }
+
+    const currentWord = wordLevelData[currentWordIndex];
+
+    // Find the segment that corresponds to this segmentIndex
+    const currentSegment = segments[segmentIndex];
+    if (!currentSegment) {
+      return highlightSearchTerm(text);
+    }
+
+    // Check if the current word belongs to this segment (with timing tolerance)
+    const tolerance = 1.0; // 1 second tolerance
+    const wordBelongsToSegment = currentWord.start >= (currentSegment.start - tolerance) &&
+                                 currentWord.start <= (currentSegment.end + tolerance);
+
+    // Only highlight if the word belongs to this specific segment
+    if (!wordBelongsToSegment) {
+      return highlightSearchTerm(text);
+    }
+
+    let highlightedText = text;
+
+    // Apply search highlighting first
+    if (searchTerm.trim()) {
+      const searchRegex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+      const searchParts = highlightedText.split(searchRegex);
+      highlightedText = searchParts.map((part, index) =>
+        searchRegex.test(part) ? `<mark class="bg-yellow-200 px-1 rounded">${part}</mark>` : part
+      ).join('');
+    }
+
+    // Then apply word highlighting - only highlight the first occurrence to avoid duplicates
+    const wordRegex = new RegExp(`\\b${escapeRegExp(currentWord.word)}\\b`, 'gi');
+    let matchCount = 0;
+    highlightedText = highlightedText.replace(wordRegex, (match) => {
+      matchCount++;
+      // Only highlight the first occurrence
+      if (matchCount === 1) {
+        return `<span class="current-word-highlight bg-blue-200 px-1 rounded font-medium">${match}</span>`;
+      }
+      return match;
+    });
+
+    return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />;
   };
 
   // Editing functions
@@ -319,6 +499,7 @@ export const TranscriptPanel = ({
                 onStopEdit={stopEditingSegment}
                 onUpdateSegment={updateSegment}
                 highlightSearchTerm={highlightSearchTerm}
+                highlightCurrentWord={highlightCurrentWord}
                 formatTimeForInput={formatTimeForInput}
                 parseTimeFromInput={parseTimeFromInput}
                 ref={originalIndex === activeSegmentIndex ? activeSegmentRef : null}
@@ -360,6 +541,7 @@ const EditableSegment = React.forwardRef(({
   onStopEdit,
   onUpdateSegment,
   highlightSearchTerm,
+  highlightCurrentWord,
   formatTimeForInput,
   parseTimeFromInput
 }, ref) => {
@@ -487,7 +669,7 @@ const EditableSegment = React.forwardRef(({
 
             {/* Segment text */}
             <div className="text-sm text-gray-900 leading-relaxed">
-              {/* Always show the segment.text to ensure edited text is displayed */}
+              {/* Only use search highlighting, no word highlighting in transcript panel */}
               <span>{highlightSearchTerm(segment.text)}</span>
             </div>
 

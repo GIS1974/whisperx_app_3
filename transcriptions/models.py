@@ -23,6 +23,7 @@ class Transcription(models.Model):
 
     # Generated file paths
     vtt_file_path = models.CharField(max_length=512, null=True, blank=True)
+    word_level_vtt_file_path = models.CharField(max_length=512, null=True, blank=True)
     srt_file_path = models.CharField(max_length=512, null=True, blank=True)
     txt_file_path = models.CharField(max_length=512, null=True, blank=True)
 
@@ -59,6 +60,11 @@ class Transcription(models.Model):
     def has_vtt(self):
         """Check if VTT file exists."""
         return bool(self.vtt_file_path)
+
+    @property
+    def has_word_level_vtt(self):
+        """Check if word-level VTT file exists."""
+        return bool(self.word_level_vtt_file_path)
 
     @property
     def has_srt(self):

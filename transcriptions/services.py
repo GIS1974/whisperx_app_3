@@ -7,7 +7,7 @@ from pathlib import Path
 from django.conf import settings
 import replicate
 from .models import Transcription
-from .subtitle_generators import VTTGenerator, SRTGenerator, TXTGenerator
+from .subtitle_generators import VTTGenerator, WordLevelVTTGenerator, SRTGenerator, TXTGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -372,12 +372,15 @@ class TranscriptionService:
 
             # Generate subtitle files
             vtt_path = TranscriptionService._generate_vtt(transcription_dir, whisperx_output)
+            word_level_vtt_path = TranscriptionService._generate_word_level_vtt(transcription_dir, whisperx_output)
             srt_path = TranscriptionService._generate_srt(transcription_dir, whisperx_output)
             txt_path = TranscriptionService._generate_txt(transcription_dir, whisperx_output)
 
             # Update transcription record with file paths
             if vtt_path:
                 transcription.vtt_file_path = os.path.relpath(vtt_path, settings.MEDIA_ROOT)
+            if word_level_vtt_path:
+                transcription.word_level_vtt_file_path = os.path.relpath(word_level_vtt_path, settings.MEDIA_ROOT)
             if srt_path:
                 transcription.srt_file_path = os.path.relpath(srt_path, settings.MEDIA_ROOT)
             if txt_path:
@@ -428,6 +431,17 @@ class TranscriptionService:
             return vtt_path
         except Exception as e:
             logger.error(f"Error generating VTT: {str(e)}")
+            return None
+
+    @staticmethod
+    def _generate_word_level_vtt(output_dir, whisperx_output):
+        """Generate word-level VTT subtitle file for word highlighting."""
+        try:
+            word_vtt_path = output_dir / 'word_level_subtitles.vtt'
+            WordLevelVTTGenerator.generate(whisperx_output, word_vtt_path)
+            return word_vtt_path
+        except Exception as e:
+            logger.error(f"Error generating word-level VTT: {str(e)}")
             return None
 
     @staticmethod

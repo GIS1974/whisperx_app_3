@@ -15,13 +15,13 @@ class TranscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transcription
         fields = [
-            'id', 'media_file', 'completed_date', 'vtt_file_path',
+            'id', 'media_file', 'completed_date', 'vtt_file_path', 'word_level_vtt_file_path',
             'srt_file_path', 'txt_file_path', 'raw_whisperx_output_path',
-            'raw_whisperx_output', 'word_count', 'segment_count', 
-            'speaker_count', 'has_vtt', 'has_srt', 'has_txt', 'has_raw_output'
+            'raw_whisperx_output', 'word_count', 'segment_count',
+            'speaker_count', 'has_vtt', 'has_word_level_vtt', 'has_srt', 'has_txt', 'has_raw_output'
         ]
         read_only_fields = [
-            'id', 'completed_date', 'vtt_file_path', 'srt_file_path',
+            'id', 'completed_date', 'vtt_file_path', 'word_level_vtt_file_path', 'srt_file_path',
             'txt_file_path', 'raw_whisperx_output_path', 'raw_whisperx_output',
             'word_count', 'segment_count', 'speaker_count'
         ]

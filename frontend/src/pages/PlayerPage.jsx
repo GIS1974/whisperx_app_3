@@ -59,15 +59,23 @@ export const PlayerPage = () => {
       console.log('=== FETCHING TRANSCRIPTION ===');
       const transcriptionData = await transcriptionAPI.getTranscription(fileId);
       console.log('Transcription data received:', transcriptionData);
-      setTranscription(transcriptionData);
 
       // Parse segments from raw output for transcript display
       if (transcriptionData.raw_whisperx_output?.segments) {
         console.log('Setting segments from raw_whisperx_output:', transcriptionData.raw_whisperx_output.segments.length, 'segments');
         console.log('First few segments:', transcriptionData.raw_whisperx_output.segments.slice(0, 10));
         setSegments(transcriptionData.raw_whisperx_output.segments);
+
+        // Add segments to transcription object for WordHighlighter
+        const transcriptionWithSegments = {
+          ...transcriptionData,
+          segments: transcriptionData.raw_whisperx_output.segments
+        };
+        setTranscription(transcriptionWithSegments);
       } else {
         console.log('No segments found in raw_whisperx_output');
+        // Set transcription without segments if no segments available
+        setTranscription(transcriptionData);
       }
     } catch (error) {
       console.error('Error fetching transcription:', error);
@@ -376,6 +384,14 @@ export const PlayerPage = () => {
                   mediaFileId={mediaFile.id}
                   transcriptionId={transcription.id}
                   onTranscriptionUpdate={fetchTranscription}
+                  // Word highlighting props
+                  playerRef={eslVideoPlayerAPI?.playerRef}
+                  transcription={transcription}
+                  showWordHighlighting={(() => {
+                    const value = eslVideoPlayerAPI?.showWordHighlighting || false;
+                    console.log('TranscriptPanel showWordHighlighting prop:', value);
+                    return value;
+                  })()}
                 />
               ) : (
                 <div className="text-center py-8">

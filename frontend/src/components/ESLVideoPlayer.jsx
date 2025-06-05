@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VideoPlayer } from './VideoPlayer';
+import { WordHighlighter } from './WordHighlighter';
 
 export const ESLVideoPlayer = ({
   mediaFile,
@@ -19,6 +20,7 @@ export const ESLVideoPlayer = ({
   const [maxRepeats, setMaxRepeats] = useState(3);
   const [showTranscript, setShowTranscript] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showWordHighlighting, setShowWordHighlighting] = useState(true);
   
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
@@ -205,66 +207,82 @@ export const ESLVideoPlayer = ({
         },
         goToSegment: (segmentIndex) => {
           goToSegment(segmentIndex);
-        }
+        },
+        // Expose player reference and word highlighting state for TranscriptPanel
+        playerRef: playerRef,
+        showWordHighlighting: showWordHighlighting
       });
     }
-  }, [segments, onPlayerReady]);
+  }, [segments, onPlayerReady, showWordHighlighting]);
 
   const currentSegmentData = segments[currentSegment];
 
   return (
     <div className={`esl-video-player ${className}`}>
-      {/* Main Video Player */}
-      <VideoPlayer
-        mediaFile={mediaFile}
-        transcription={transcription}
-        onReady={handlePlayerReady}
-        className="mb-4"
-      />
+      {/* Main Video Player with Overlay */}
+      <div className="relative mb-4">
+        <VideoPlayer
+          mediaFile={mediaFile}
+          transcription={transcription}
+          onReady={handlePlayerReady}
+        />
+
+        {/* Word Highlighting Overlay */}
+        {showWordHighlighting && transcription?.has_word_level_vtt && (
+          <WordHighlighter
+            mediaFile={mediaFile}
+            transcription={transcription}
+            playerRef={playerRef}
+            isEnabled={showWordHighlighting}
+            className="absolute inset-0 pointer-events-none"
+          />
+        )}
+      </div>
 
       {/* ESL Controls */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        {/* Mode Selection */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3">Learning Mode</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setMode('normal')}
-              className={`px-4 py-2 rounded-lg font-medium ${
-                playbackMode === 'normal'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Normal Play
-            </button>
-            <button
-              onClick={() => setMode('listen')}
-              className={`px-4 py-2 rounded-lg font-medium ${
-                playbackMode === 'listen'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Listen Mode
-            </button>
-            <button
-              onClick={() => setMode('repeat')}
-              className={`px-4 py-2 rounded-lg font-medium ${
-                playbackMode === 'repeat'
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Repeat Mode
-            </button>
+        {/* Top Row: Mode Selection and Segment Navigation */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          {/* Mode Selection */}
+          <div className="flex-shrink-0">
+            <h3 className="text-lg font-semibold mb-3">Learning Mode</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setMode('normal')}
+                className={`px-4 py-2 rounded-lg font-medium ${
+                  playbackMode === 'normal'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Normal Play
+              </button>
+              <button
+                onClick={() => setMode('listen')}
+                className={`px-4 py-2 rounded-lg font-medium ${
+                  playbackMode === 'listen'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Listen Mode
+              </button>
+              <button
+                onClick={() => setMode('repeat')}
+                className={`px-4 py-2 rounded-lg font-medium ${
+                  playbackMode === 'repeat'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Repeat Mode
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Segment Navigation */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">
+          {/* Segment Navigation */}
+          <div className="flex-shrink-0">
+            <h3 className="text-lg font-semibold mb-3">
               Segment {currentSegment + 1} of {segments.length}
             </h3>
             <div className="flex items-center gap-2">
@@ -290,25 +308,25 @@ export const ESLVideoPlayer = ({
               </button>
             </div>
           </div>
-
-          {/* Current Segment Text */}
-          {currentSegmentData && showTranscript && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-lg leading-relaxed">{currentSegmentData.text}</p>
-              <div className="text-sm text-gray-500 mt-2">
-                Duration: {currentSegmentData.duration.toFixed(1)}s
-                {playbackMode === 'repeat' && (
-                  <span className="ml-4">
-                    Repeat: {repeatCount + 1}/{maxRepeats}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Speed and Settings */}
-        <div className="flex items-center justify-between">
+        {/* Current Segment Text */}
+        {currentSegmentData && showTranscript && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <p className="text-lg leading-relaxed">{currentSegmentData.text}</p>
+            <div className="text-sm text-gray-500 mt-2">
+              Duration: {currentSegmentData.duration.toFixed(1)}s
+              {playbackMode === 'repeat' && (
+                <span className="ml-4">
+                  Repeat: {repeatCount + 1}/{maxRepeats}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Row: Speed and Settings */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
             <label className="text-sm font-medium">Speed:</label>
             <select
@@ -324,7 +342,7 @@ export const ESLVideoPlayer = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -334,6 +352,18 @@ export const ESLVideoPlayer = ({
               />
               <span className="text-sm">Show Transcript</span>
             </label>
+
+            {transcription?.has_word_level_vtt && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showWordHighlighting}
+                  onChange={(e) => setShowWordHighlighting(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm">Word Highlighting</span>
+              </label>
+            )}
 
             {playbackMode === 'repeat' && (
               <div className="flex items-center gap-2">

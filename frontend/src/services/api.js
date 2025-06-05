@@ -110,6 +110,17 @@ export const transcriptionAPI = {
   // Get subtitle file URL for serving (for video player)
   getSubtitleFileUrl: (fileId, fileType) =>
     `${API_BASE_URL}/transcriptions/${fileId}/serve/${fileType}/`,
+
+  // Get word-level subtitle file URL for word highlighting
+  getWordLevelSubtitleFileUrl: (fileId) =>
+    `${API_BASE_URL}/transcriptions/${fileId}/serve/word_vtt/`,
+
+  // Get word-level VTT content for word highlighting
+  getWordLevelVTT: (fileId) => {
+    return api.get(`/transcriptions/${fileId}/serve/word_vtt/`, {
+      responseType: 'text',
+    });
+  },
 };
 
 // File upload utilities

@@ -187,6 +187,13 @@ export const VideoPlayer = ({
       return;
     }
 
+    // Don't show native subtitles if we have word-level highlighting enabled
+    // The WordHighlighter component will handle subtitle display
+    if (transcription.has_word_level_vtt) {
+      console.log('Skipping native subtitles - using WordHighlighter overlay instead');
+      return;
+    }
+
     const vttUrl = transcriptionAPI.getSubtitleFileUrl(mediaFile.id, 'vtt');
 
     // Remove existing text tracks
@@ -222,6 +229,13 @@ export const VideoPlayer = ({
 
   const setupInlineSubtitles = () => {
     if (!playerRef.current || !subtitles || subtitles.length === 0) return;
+
+    // Don't show native subtitles if we have word-level highlighting enabled
+    // The WordHighlighter component will handle subtitle display
+    if (transcription?.has_word_level_vtt) {
+      console.log('Skipping inline subtitles - using WordHighlighter overlay instead');
+      return;
+    }
 
     // Convert segments to VTT format and create blob URL
     const vttContent = convertSegmentsToVTT(subtitles);

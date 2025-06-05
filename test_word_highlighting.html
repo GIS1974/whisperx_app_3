@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Highlighting Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .current-word-highlight {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1f2937;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            animation: wordPulse 0.3s ease-in-out;
+            transition: all 0.2s ease;
+        }
+        
+        @keyframes wordPulse {
+            0% { 
+                transform: scale(1);
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            }
+            50% { 
+                transform: scale(1.05);
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            }
+            100% { 
+                transform: scale(1);
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            }
+        }
+        
+        .test-container {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        .status {
+            background: #e5e7eb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Highlighting Test</h1>
+    
+    <div class="status" id="status">
+        Status: Ready to test
+    </div>
+    
+    <div class="controls">
+        <button onclick="testWordHighlighting()">Test Word Highlighting</button>
+        <button onclick="fetchWordLevelVTT()">Fetch Word-Level VTT</button>
+        <button onclick="simulatePlayback()">Simulate Playback</button>
+    </div>
+    
+    <div class="test-container">
+        <h3>Sample Text with Word Highlighting:</h3>
+        <div id="sampleText">
+            Thank you. Guys, tickets already went on sale. What? They're not supposed to be available yet.
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h3>Word-Level VTT Data:</h3>
+        <pre id="vttData" style="max-height: 300px; overflow-y: auto; background: white; padding: 10px; border: 1px solid #ccc;">
+            Click "Fetch Word-Level VTT" to load data...
+        </pre>
+    </div>
+    
+    <div class="test-container">
+        <h3>Parsed Words:</h3>
+        <div id="parsedWords">
+            No words parsed yet...
+        </div>
+    </div>
+
+    <script>
+        let wordLevelData = [];
+        let currentWordIndex = -1;
+        let simulationInterval = null;
+        
+        // Test basic word highlighting
+        function testWordHighlighting() {
+            const sampleText = document.getElementById('sampleText');
+            const words = ['Thank', 'you', 'Guys', 'tickets', 'already'];
+            
+            words.forEach((word, index) => {
+                setTimeout(() => {
+                    // Remove previous highlights
+                    sampleText.innerHTML = sampleText.textContent;
+                    
+                    // Add highlight to current word
+                    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                    sampleText.innerHTML = sampleText.innerHTML.replace(regex, 
+                        `<span class="current-word-highlight">${word}</span>`);
+                    
+                    updateStatus(`Highlighting word: "${word}"`);
+                }, index * 1000);
+            });
+        }
+        
+        // Fetch word-level VTT data from the API
+        async function fetchWordLevelVTT() {
+            try {
+                updateStatus('Fetching word-level VTT data...');
+                
+                const response = await fetch('http://localhost:8000/api/transcriptions/14179905-e78b-4451-bea1-6c150b0df90e/serve/word_vtt/');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const vttText = await response.text();
+                document.getElementById('vttData').textContent = vttText.substring(0, 2000) + '...';
+                
+                // Parse the VTT data
+                wordLevelData = parseWordLevelVTT(vttText);
+                displayParsedWords();
+                
+                updateStatus(`Successfully loaded ${wordLevelData.length} words`);
+                
+            } catch (error) {
+                updateStatus(`Error: ${error.message}`);
+                console.error('Error fetching VTT:', error);
+            }
+        }
+        
+        // Parse VTT content to extract word-level timing
+        function parseWordLevelVTT(vttText) {
+            const lines = vttText.split('\n');
+            const words = [];
+            let i = 0;
+
+            while (i < lines.length) {
+                const line = lines[i].trim();
+                
+                // Skip WEBVTT header and empty lines
+                if (line === 'WEBVTT' || line === '') {
+                    i++;
+                    continue;
+                }
+
+                // Check if this is a cue number
+                if (/^\d+$/.test(line)) {
+                    i++; // Move to timing line
+                    
+                    if (i < lines.length) {
+                        const timingLine = lines[i].trim();
+                        const timingMatch = timingLine.match(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+                        
+                        if (timingMatch) {
+                            const startTime = parseVTTTime(timingMatch[1]);
+                            const endTime = parseVTTTime(timingMatch[2]);
+                            
+                            i++; // Move to text line
+                            if (i < lines.length) {
+                                const textLine = lines[i].trim();
+                                
+                                // Extract word from VTT cue
+                                const wordMatch = textLine.match(/<c\.word-highlight>(.*?)<\/c>/);
+                                const word = wordMatch ? wordMatch[1] : textLine.replace(/<[^>]*>/g, '');
+                                
+                                if (word && word !== '¶¶') {
+                                    words.push({
+                                        word: word.trim(),
+                                        start: startTime,
+                                        end: endTime,
+                                        index: words.length
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                i++;
+            }
+
+            return words;
+        }
+        
+        // Convert VTT time format to seconds
+        function parseVTTTime(timeString) {
+            const [hours, minutes, seconds] = timeString.split(':');
+            return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+        }
+        
+        // Display parsed words
+        function displayParsedWords() {
+            const container = document.getElementById('parsedWords');
+            if (wordLevelData.length === 0) {
+                container.textContent = 'No words found';
+                return;
+            }
+            
+            container.innerHTML = wordLevelData.slice(0, 50).map(word => 
+                `<span style="margin: 2px; padding: 4px 8px; background: #e5e7eb; border-radius: 4px; font-size: 12px;">
+                    ${word.word} (${word.start.toFixed(2)}s-${word.end.toFixed(2)}s)
+                </span>`
+            ).join('') + (wordLevelData.length > 50 ? '<br><em>... and more</em>' : '');
+        }
+        
+        // Simulate playback with word highlighting
+        function simulatePlayback() {
+            if (wordLevelData.length === 0) {
+                updateStatus('Please fetch VTT data first');
+                return;
+            }
+            
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+                updateStatus('Simulation stopped');
+                return;
+            }
+            
+            updateStatus('Starting playback simulation...');
+            let currentTime = wordLevelData[0].start;
+            const timeStep = 0.1; // 100ms steps
+            
+            simulationInterval = setInterval(() => {
+                // Find active word
+                const activeWordIndex = wordLevelData.findIndex(word => 
+                    currentTime >= word.start && currentTime <= word.end
+                );
+                
+                if (activeWordIndex !== -1 && activeWordIndex !== currentWordIndex) {
+                    currentWordIndex = activeWordIndex;
+                    highlightCurrentWord();
+                }
+                
+                currentTime += timeStep;
+                
+                // Stop when we reach the end
+                if (currentTime > wordLevelData[wordLevelData.length - 1].end) {
+                    clearInterval(simulationInterval);
+                    simulationInterval = null;
+                    updateStatus('Simulation completed');
+                }
+            }, 100);
+        }
+        
+        // Highlight the current word in the sample text
+        function highlightCurrentWord() {
+            if (currentWordIndex === -1 || !wordLevelData[currentWordIndex]) return;
+            
+            const currentWord = wordLevelData[currentWordIndex];
+            const sampleText = document.getElementById('sampleText');
+            
+            // Reset text
+            sampleText.innerHTML = sampleText.textContent;
+            
+            // Highlight current word
+            const regex = new RegExp(`\\b${escapeRegExp(currentWord.word)}\\b`, 'gi');
+            sampleText.innerHTML = sampleText.innerHTML.replace(regex, 
+                `<span class="current-word-highlight">${currentWord.word}</span>`);
+            
+            updateStatus(`Playing: "${currentWord.word}" at ${currentWord.start.toFixed(2)}s`);
+        }
+        
+        // Escape special regex characters
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // Update status display
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Status: ${message}`;
+        }
+    </script>
+</body>
+</html>

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from media_files.models import MediaFile
 from .models import Transcription
 from .serializers import TranscriptionSerializer, TranscriptionDetailSerializer
-from .subtitle_generators import VTTGenerator, SRTGenerator, TXTGenerator
+from .subtitle_generators import VTTGenerator, WordLevelVTTGenerator, SRTGenerator, TXTGenerator
 
 
 @api_view(['GET'])
@@ -47,11 +47,11 @@ def transcription_detail(request, file_id):
 @permission_classes([permissions.AllowAny])  # Temporarily allow any for testing
 def download_subtitle_file(request, file_id, file_type):
     """
-    Download subtitle file (VTT, SRT, or TXT).
+    Download subtitle file (VTT, SRT, TXT, or word-level VTT).
     """
-    if file_type not in ['vtt', 'srt', 'txt']:
+    if file_type not in ['vtt', 'word_vtt', 'srt', 'txt']:
         return Response(
-            {'error': 'Invalid file type. Must be vtt, srt, or txt'},
+            {'error': 'Invalid file type. Must be vtt, word_vtt, srt, or txt'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -62,8 +62,11 @@ def download_subtitle_file(request, file_id, file_type):
         transcription = media_file.transcription
 
         # Get file path based on type
-        file_path_attr = f'{file_type}_file_path'
-        file_path = getattr(transcription, file_path_attr)
+        if file_type == 'word_vtt':
+            file_path = transcription.word_level_vtt_file_path
+        else:
+            file_path_attr = f'{file_type}_file_path'
+            file_path = getattr(transcription, file_path_attr)
 
         if not file_path:
             return Response(
@@ -82,6 +85,7 @@ def download_subtitle_file(request, file_id, file_type):
         # Determine content type
         content_types = {
             'vtt': 'text/vtt',
+            'word_vtt': 'text/vtt',
             'srt': 'application/x-subrip',
             'txt': 'text/plain'
         }
@@ -116,9 +120,9 @@ def serve_subtitle_file(request, file_id, file_type):
     """
     Serve subtitle file for inline use (e.g., by video player).
     """
-    if file_type not in ['vtt', 'srt']:
+    if file_type not in ['vtt', 'word_vtt', 'srt']:
         return Response(
-            {'error': 'Invalid file type. Must be vtt or srt'},
+            {'error': 'Invalid file type. Must be vtt, word_vtt, or srt'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -129,8 +133,11 @@ def serve_subtitle_file(request, file_id, file_type):
         transcription = media_file.transcription
 
         # Get file path based on type
-        file_path_attr = f'{file_type}_file_path'
-        file_path = getattr(transcription, file_path_attr)
+        if file_type == 'word_vtt':
+            file_path = transcription.word_level_vtt_file_path
+        else:
+            file_path_attr = f'{file_type}_file_path'
+            file_path = getattr(transcription, file_path_attr)
 
         if not file_path:
             raise Http404(f'{file_type.upper()} file not available')
@@ -143,6 +150,7 @@ def serve_subtitle_file(request, file_id, file_type):
         # Determine content type
         content_types = {
             'vtt': 'text/vtt',
+            'word_vtt': 'text/vtt',
             'srt': 'application/x-subrip'
         }
 
@@ -190,6 +198,7 @@ def transcription_status(request, file_id):
         response_data.update({
             'transcription_available': True,
             'has_vtt': transcription.has_vtt,
+            'has_word_level_vtt': transcription.has_word_level_vtt,
             'has_srt': transcription.has_srt,
             'has_txt': transcription.has_txt,
             'word_count': transcription.word_count,
@@ -322,6 +331,11 @@ def update_transcription_segments(request, file_id):
         if transcription.vtt_file_path:
             vtt_path = os.path.join(settings.MEDIA_ROOT, transcription.vtt_file_path)
             VTTGenerator.generate(updated_output, vtt_path)
+
+        # Regenerate word-level VTT file
+        if transcription.word_level_vtt_file_path:
+            word_vtt_path = os.path.join(settings.MEDIA_ROOT, transcription.word_level_vtt_file_path)
+            WordLevelVTTGenerator.generate(updated_output, word_vtt_path)
 
         # Regenerate SRT file
         if transcription.srt_file_path:
