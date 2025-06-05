@@ -25,6 +25,7 @@ export const ESLVideoPlayer = ({
   
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
+  const timeUpdateIntervalRef = useRef(null);
 
   // Parse transcript segments from transcription data
   useEffect(() => {
@@ -56,6 +57,50 @@ export const ESLVideoPlayer = ({
     }
   }, [selectedSegmentIndex]);
 
+  // Handle time updates to track current segment
+  const handleTimeUpdate = useCallback(() => {
+    if (!playerRef.current || segments.length === 0) return;
+
+    const currentTime = playerRef.current.currentTime();
+    console.log('Time update:', currentTime.toFixed(2), 'Current segment:', currentSegment);
+
+    // Find the segment that contains the current time
+    const activeSegment = segments.findIndex(segment =>
+      currentTime >= segment.start && currentTime <= segment.end
+    );
+
+    // If no segment contains the current time, find the closest one
+    let segmentToShow = activeSegment;
+    if (activeSegment === -1) {
+      // Find the closest segment based on time
+      segmentToShow = segments.findIndex((segment, index) => {
+        const nextSegment = segments[index + 1];
+        return currentTime >= segment.start && (!nextSegment || currentTime < nextSegment.start);
+      });
+
+      // If still not found, use the last segment if we're past the end
+      if (segmentToShow === -1) {
+        if (currentTime > segments[segments.length - 1].end) {
+          segmentToShow = segments.length - 1;
+        } else {
+          segmentToShow = 0; // Default to first segment
+        }
+      }
+    }
+
+    // Update current segment if it has changed
+    if (segmentToShow !== -1 && segmentToShow !== currentSegment) {
+      console.log('Changing segment from', currentSegment, 'to', segmentToShow, segments[segmentToShow]?.text);
+      setCurrentSegment(segmentToShow);
+      if (onProgress) {
+        onProgress(segmentToShow, segments[segmentToShow]);
+      }
+      if (onSegmentChange) {
+        onSegmentChange(segmentToShow, segments[segmentToShow]);
+      }
+    }
+  }, [segments, currentSegment, onProgress, onSegmentChange]);
+
   // Initialize subtitle display based on current video time
   const initializeSubtitleDisplay = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
@@ -79,7 +124,7 @@ export const ESLVideoPlayer = ({
     }
 
     console.log('Initialized subtitle display:', segmentToShow, segments[segmentToShow]?.text);
-  }, [segments, currentSegment, onProgress, onSegmentChange]);
+  }, [segments, currentSegment, onProgress, onSegmentChange, handleTimeUpdate]);
 
   // Initialize subtitle display when segments are loaded
   useEffect(() => {
@@ -91,8 +136,25 @@ export const ESLVideoPlayer = ({
           initializeSubtitleDisplay();
         }, 100);
       }
+
+      // Start polling for time updates to ensure subtitles update
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
+      }
+
+      timeUpdateIntervalRef.current = setInterval(() => {
+        if (playerRef.current && segments.length > 0) {
+          handleTimeUpdate();
+        }
+      }, 500); // Check every 500ms
     }
-  }, [segments, initializeSubtitleDisplay]);
+
+    return () => {
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
+      }
+    };
+  }, [segments, initializeSubtitleDisplay, handleTimeUpdate]);
 
   // Force subtitle update when current segment changes
   useEffect(() => {
@@ -135,14 +197,36 @@ export const ESLVideoPlayer = ({
     };
   }, [currentSegment, segments]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
+      }
+      if (segmentTimeoutRef.current) {
+        clearTimeout(segmentTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle player ready
   const handlePlayerReady = (player) => {
     playerRef.current = player;
 
-    // Set up time update listener for segment tracking
+    // Set up multiple event listeners for comprehensive time tracking
     player.on('timeupdate', handleTimeUpdate);
-    player.on('play', () => setIsPlaying(true));
-    player.on('pause', () => setIsPlaying(false));
+    player.on('seeked', handleTimeUpdate); // When user seeks using progress bar
+    player.on('seeking', handleTimeUpdate); // While user is seeking
+    player.on('loadedmetadata', handleTimeUpdate); // When video metadata loads
+    player.on('canplay', handleTimeUpdate); // When video can start playing
+    player.on('play', () => {
+      setIsPlaying(true);
+      handleTimeUpdate(); // Update immediately when play starts
+    });
+    player.on('pause', () => {
+      setIsPlaying(false);
+      handleTimeUpdate(); // Update when paused to ensure correct subtitle
+    });
     player.on('ended', handleVideoEnd);
 
     // Initialize subtitle display immediately
@@ -153,28 +237,6 @@ export const ESLVideoPlayer = ({
 
 
 
-  // Handle time updates to track current segment
-  const handleTimeUpdate = () => {
-    if (!playerRef.current || segments.length === 0) return;
-
-    const currentTime = playerRef.current.currentTime();
-    const activeSegment = segments.findIndex(segment =>
-      currentTime >= segment.start && currentTime <= segment.end
-    );
-
-    // Always update current segment during normal playback to ensure subtitles update
-    if (activeSegment !== -1) {
-      if (activeSegment !== currentSegment) {
-        setCurrentSegment(activeSegment);
-        if (onProgress) {
-          onProgress(activeSegment, segments[activeSegment]);
-        }
-        if (onSegmentChange) {
-          onSegmentChange(activeSegment, segments[activeSegment]);
-        }
-      }
-    }
-  };
 
   // Handle video end
   const handleVideoEnd = () => {
@@ -331,7 +393,7 @@ export const ESLVideoPlayer = ({
               </p>
               {/* Debug info - remove in production */}
               <div className="text-xs text-gray-300 mt-2 opacity-50">
-                Segment: {currentSegment + 1}/{segments.length} | Force: {forceSubtitleDisplay ? 'Y' : 'N'}
+                Segment: {currentSegment + 1}/{segments.length} | Force: {forceSubtitleDisplay ? 'Y' : 'N'} | Time: {playerRef.current ? playerRef.current.currentTime()?.toFixed(1) : 'N/A'}
               </div>
             </div>
           </div>
