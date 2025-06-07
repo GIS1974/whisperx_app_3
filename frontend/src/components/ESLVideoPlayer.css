@@ -1,0 +1,154 @@
+/* Custom styles for ESL Video Player */
+
+/* Mode dropdown styling */
+.mode-dropdown {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 24px 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: none;
+  position: relative;
+}
+
+.mode-dropdown:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+}
+
+.mode-dropdown:focus {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+/* Speed dropdown styling */
+.speed-dropdown {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 4px 20px 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: none;
+  backdrop-filter: blur(4px);
+}
+
+.speed-dropdown:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.speed-dropdown:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Control button styling */
+.control-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  padding: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.control-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-button:disabled:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Subtitle overlay styling */
+.subtitle-overlay {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Control bar gradient */
+.control-bar {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.6) 50%,
+    rgba(0, 0, 0, 0.3) 80%,
+    transparent 100%
+  );
+  backdrop-filter: blur(4px);
+}
+
+/* Dropdown arrow styling */
+.dropdown-arrow {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  width: 12px;
+  height: 12px;
+  color: currentColor;
+}
+
+/* Custom scrollbar for subtitle section */
+.subtitle-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.subtitle-section::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.subtitle-section::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.subtitle-section::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .mode-dropdown {
+    padding: 4px 16px 4px 8px;
+    font-size: 10px;
+  }
+  
+  .speed-dropdown {
+    padding: 3px 16px 3px 6px;
+    font-size: 11px;
+  }
+  
+  .control-button {
+    padding: 6px;
+  }
+  
+  .subtitle-overlay {
+    padding: 12px 16px;
+    margin: 0 16px;
+  }
+}

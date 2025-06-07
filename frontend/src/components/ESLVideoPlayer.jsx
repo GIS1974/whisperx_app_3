@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { WordHighlighter } from './WordHighlighter';
+import './ESLVideoPlayer.css';
 
 export const ESLVideoPlayer = ({
   mediaFile,
@@ -498,7 +499,7 @@ export const ESLVideoPlayer = ({
 
   return (
     <div className={`esl-video-player ${className} h-full flex flex-col`}>
-      {/* Main Video Player Container with Modern Styling - Fixed */}
+      {/* Main Video Player Container with Modern Styling */}
       <div className="relative bg-black rounded-xl overflow-hidden shadow-xl flex-shrink-0">
         <VideoPlayer
           mediaFile={mediaFile}
@@ -507,110 +508,45 @@ export const ESLVideoPlayer = ({
           className="w-full aspect-video"
         />
 
-        {/* Subtitle Overlay - Positioned over video with transparency */}
+        {/* Subtitle Overlay - Styled like control panel */}
         {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
-          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 pointer-events-none">
-            <div className="bg-black/70 backdrop-blur-md rounded-xl px-6 py-4 text-center shadow-xl border border-white/10">
-              <p className="text-xl md:text-2xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
+            <div className="subtitle-overlay">
+              <p className="text-lg md:text-xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
                 {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
               </p>
             </div>
           </div>
         )}
 
-        {/* Video Overlay Controls */}
-        <div className="absolute top-3 right-3 flex items-center gap-2 pointer-events-auto">
-          {/* Settings Toggle */}
-          <button
-            onClick={() => setShowTranscript(!showTranscript)}
-            className={`p-2 rounded-lg backdrop-blur-sm transition-all duration-200 ${
-              showTranscript
-                ? 'bg-blue-600/80 text-white'
-                : 'bg-black/70 text-white/70 hover:text-white'
-            }`}
-            title="Toggle Subtitles"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Compact ESL Controls - Fixed height, no scrolling */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-2 flex-shrink-0">
-        {/* Compact Header with Segment Info */}
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-3 py-2 border-b border-gray-100 flex-shrink-0">
+        {/* Modern Control Bar - Bottom Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 control-bar p-4 pointer-events-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h3 className="text-sm font-bold text-gray-900">Learning Controls</h3>
-              <span className="text-sm text-gray-600">
-                Segment {currentSegment + 1}/{segments.length}
-                {currentSegmentData && (
-                  <span className="ml-1">• {currentSegmentData.duration.toFixed(1)}s</span>
-                )}
-              </span>
-            </div>
-            {playbackMode === 'repeat' && (
-              <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
-                {repeatCount + 1}/{maxRepeats}
+            {/* Left Side - Mode Dropdown (replacing LIVE) */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <select
+                  value={playbackMode}
+                  onChange={(e) => setMode(e.target.value)}
+                  className="mode-dropdown"
+                >
+                  <option value="normal">NORMAL</option>
+                  <option value="listen">LISTEN</option>
+                  <option value="repeat">REPEAT</option>
+                </select>
+                <svg className="dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            )}
-          </div>
-        </div>
 
-        <div className="p-3">
-          {/* Compact Learning Mode Selection */}
-          <div className="mb-3">
-            <div className="flex gap-2">
-              <button
-                onClick={() => setMode('normal')}
-                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
-                  playbackMode === 'normal'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-sm font-medium">Normal</div>
-                <div className="text-xs text-gray-500">Continuous</div>
-              </button>
-
-              <button
-                onClick={() => setMode('listen')}
-                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
-                  playbackMode === 'listen'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-sm font-medium">Listen</div>
-                <div className="text-xs text-gray-500">Segment</div>
-              </button>
-
-              <button
-                onClick={() => setMode('repeat')}
-                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
-                  playbackMode === 'repeat'
-                    ? 'border-orange-500 bg-orange-50 text-orange-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="text-sm font-medium">Repeat</div>
-                <div className="text-xs text-gray-500">Practice</div>
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Navigation */}
-          <div className="mb-3">
-            <div className="flex items-center justify-center gap-3">
+              {/* Navigation Controls */}
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   goToPreviousSegment(e);
                 }}
                 disabled={currentSegment === 0}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="control-button"
                 title="Previous Segment"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -623,12 +559,12 @@ export const ESLVideoPlayer = ({
                   e.preventDefault();
                   playCurrentSegment();
                 }}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 flex items-center gap-2"
+                className="control-button"
+                title="Play Current Segment"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Play
               </button>
 
               <button
@@ -637,7 +573,7 @@ export const ESLVideoPlayer = ({
                   goToNextSegment(e);
                 }}
                 disabled={currentSegment === segments.length - 1}
-                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="control-button"
                 title="Next Segment"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -645,74 +581,134 @@ export const ESLVideoPlayer = ({
                 </svg>
               </button>
             </div>
-          </div>
 
-          {/* Compact Current Segment Display */}
-          {currentSegmentData && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-3 mb-3 border border-gray-100">
-              <p className="text-sm leading-relaxed text-gray-900 font-medium mb-1">
-                {currentSegmentData.text}
-              </p>
-              <div className="flex items-center gap-3 text-xs text-gray-600">
-                <span>{currentSegmentData.duration.toFixed(1)}s</span>
-                <span>{Math.floor(currentSegmentData.start / 60)}:{Math.floor(currentSegmentData.start % 60).toString().padStart(2, '0')} - {Math.floor(currentSegmentData.end / 60)}:{Math.floor(currentSegmentData.end % 60).toString().padStart(2, '0')}</span>
-              </div>
+            {/* Center - Segment Info */}
+            <div className="text-white text-sm font-medium">
+              {currentSegment + 1} / {segments.length}
             </div>
-          )}
 
-          {/* Compact Settings Panel */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Playback Settings */}
-            <div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-700">Speed</label>
+            {/* Right Side - Settings Controls */}
+            <div className="flex items-center gap-3">
+              {/* Playback Speed */}
+              <div className="relative">
                 <select
                   value={playbackSpeed}
                   onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  className="speed-dropdown"
                 >
-                  <option value={0.5}>0.5x</option>
-                  <option value={0.75}>0.75x</option>
-                  <option value={1}>1x</option>
-                  <option value={1.25}>1.25x</option>
-                  <option value={1.5}>1.5x</option>
+                  <option value={0.5} className="text-black">0.5x</option>
+                  <option value={0.75} className="text-black">0.75x</option>
+                  <option value={1} className="text-black">1x</option>
+                  <option value={1.25} className="text-black">1.25x</option>
+                  <option value={1.5} className="text-black">1.5x</option>
                 </select>
               </div>
 
+              {/* Subtitle Toggle */}
+              <button
+                onClick={() => setShowTranscript(!showTranscript)}
+                className={`control-button ${
+                  showTranscript
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : ''
+                }`}
+                title="Toggle Subtitles"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
+                </svg>
+              </button>
+
+              {/* Fullscreen-style button */}
+              <button
+                className="control-button"
+                title="Player Options"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Subtitle Section - Clean and Simple */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-4 flex-1 subtitle-section">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Current Segment</h3>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Segment {currentSegment + 1} of {segments.length}
+              </span>
               {playbackMode === 'repeat' && (
-                <div className="space-y-2 mt-2">
-                  <label className="text-xs font-medium text-gray-700">Repeats</label>
-                  <select
-                    value={maxRepeats}
-                    onChange={(e) => setMaxRepeats(parseInt(e.target.value))}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value={1}>1x</option>
-                    <option value={2}>2x</option>
-                    <option value={3}>3x</option>
-                    <option value={5}>5x</option>
-                    <option value={10}>10x</option>
-                  </select>
+                <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                  Repeat {repeatCount + 1}/{maxRepeats}
                 </div>
               )}
             </div>
-
-            {/* Display Settings */}
-            <div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showTranscript}
-                    onChange={(e) => setShowTranscript(e.target.checked)}
-                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-xs font-medium text-gray-700">Subtitles</span>
-                </label>
-              </div>
-            </div>
           </div>
+        </div>
 
+        {/* Current Segment Content */}
+        <div className="p-6">
+          {currentSegmentData ? (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-100">
+                <p className="text-xl leading-relaxed text-gray-900 font-medium mb-4">
+                  {currentSegmentData.text}
+                </p>
+                <div className="flex items-center gap-6 text-sm text-gray-600">
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Duration: {currentSegmentData.duration.toFixed(1)}s
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
+                    </svg>
+                    Time: {Math.floor(currentSegmentData.start / 60)}:{Math.floor(currentSegmentData.start % 60).toString().padStart(2, '0')} - {Math.floor(currentSegmentData.end / 60)}:{Math.floor(currentSegmentData.end % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Additional Settings for Repeat Mode */}
+              {playbackMode === 'repeat' && (
+                <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                  <h4 className="text-sm font-semibold text-orange-900 mb-3">Repeat Mode Settings</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-orange-800 mb-2 block">Max Repeats</label>
+                      <select
+                        value={maxRepeats}
+                        onChange={(e) => setMaxRepeats(parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                      >
+                        <option value={1}>1 time</option>
+                        <option value={2}>2 times</option>
+                        <option value={3}>3 times</option>
+                        <option value={5}>5 times</option>
+                        <option value={10}>10 times</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
+                </svg>
+              </div>
+              <p className="text-gray-500">No segment selected</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
