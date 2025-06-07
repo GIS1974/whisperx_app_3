@@ -222,144 +222,96 @@ export const PlayerPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Back Navigation */}
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
-      >
-        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Dashboard
-      </button>
-
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">{mediaFile.filename_original}</h1>
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
-                </svg>
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header - Fixed height */}
+      <div className="bg-white shadow-sm border-b border-gray-200 p-4 flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <div className="border-l border-gray-300 h-6"></div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{mediaFile.filename_original}</h1>
+              <div className="flex items-center space-x-3 text-sm text-gray-500">
                 <span className="capitalize">{mediaFile.file_type}</span>
-              </span>
-              <span>•</span>
-              <span className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
-                {mediaFile.language_transcription?.toUpperCase()}
-              </span>
-              <span>•</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(mediaFile.status)}`}>
-                {getStatusText(mediaFile.status)}
-              </span>
+                <span>•</span>
+                <span>{mediaFile.language_transcription?.toUpperCase()}</span>
+                <span>•</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(mediaFile.status)}`}>
+                  {getStatusText(mediaFile.status)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Processing Status */}
-      {mediaFile.is_processing && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
-            <div>
-              <h3 className="text-sm font-medium text-yellow-800">Processing in progress</h3>
-              <p className="text-sm text-yellow-700 mt-1">
-                Your file is being processed. Transcription will be available shortly.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Status */}
-      {mediaFile.has_failed && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-red-800">Processing Failed</h3>
-          <p className="text-sm text-red-700 mt-1">{mediaFile.error_message}</p>
-        </div>
-      )}
-
-      {/* ESL Video Player */}
-      {mediaFile.is_completed && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-6rem)]">
-          {/* Video Player Column - Takes 2/3 width on lg screens */}
-          <div className="lg:col-span-2 space-y-6 min-h-0">
-            {/* ESL Video Player with integrated controls */}
-            <div className="h-full overflow-y-auto">
-              <ESLVideoPlayer
-                mediaFile={mediaFile}
-                transcription={transcription}
-                selectedSegmentIndex={activeSegmentIndex}
-                onProgress={(segmentIndex, segment) => {
-                  setActiveSegmentIndex(segmentIndex);
-                  setCurrentSegment(segment);
-                }}
-                onSegmentComplete={(segmentIndex, segment) => {
-                  // Handle segment completion for analytics or progress tracking
-                  console.log('Segment completed:', segmentIndex, segment);
-                }}
-                onSegmentChange={handleSegmentChange}
-                onPlayerReady={setEslVideoPlayerAPI}
-                className="w-full"
-              />
-            </div>
-
-            {/* Download Options - Only show when transcription is available */}
-            {transcription && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Transcript</h3>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => downloadSubtitle('vtt')}
-                    className="btn-primary text-sm"
-                  >
-                    📄 Download VTT
-                  </button>
-                  <button
-                    onClick={() => downloadSubtitle('srt')}
-                    className="btn-primary text-sm"
-                  >
-                    📄 Download SRT
-                  </button>
-                  <button
-                    onClick={() => downloadSubtitle('txt')}
-                    className="btn-primary text-sm"
-                  >
-                    📄 Download TXT
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  VTT: WebVTT format for web players • SRT: SubRip format for video players • TXT: Plain text format
-                </p>
-              </div>
-            )}
-
-            {/* Transcription Loading State */}
-            {!transcription && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
-                  <div>
-                    <h3 className="text-sm font-medium text-yellow-800">Loading Transcription</h3>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Transcription data is being loaded. ESL features will be available shortly.
-                    </p>
-                  </div>
+      {/* Main Content Area - Fixed height */}
+      <div className="flex-1 overflow-hidden">
+        {/* Processing Status */}
+        {mediaFile.is_processing && (
+          <div className="h-full flex items-center justify-center">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-600 mr-3"></div>
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">Processing in progress</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Your file is being processed. Transcription will be available shortly.
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
+        )}
 
-          {/* Transcript Panel Column - 1/3 width on lg screens */}
-          <div className="lg:col-span-1 min-h-0">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 h-[calc(100vh-6rem)] flex flex-col overflow-hidden sticky top-20">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+        {/* Error Status */}
+        {mediaFile.has_failed && (
+          <div className="h-full flex items-center justify-center">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+              <h3 className="text-sm font-medium text-red-800">Processing Failed</h3>
+              <p className="text-sm text-red-700 mt-1">{mediaFile.error_message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ESL Video Player - Fixed Layout */}
+        {mediaFile.is_completed && (
+          <div className="h-full flex">
+            {/* Video Player Column - Takes 2/3 width */}
+            <div className="flex-1 lg:w-2/3 flex flex-col overflow-hidden">
+              {/* ESL Video Player with integrated controls */}
+              <div className="flex-1 overflow-hidden">
+                <ESLVideoPlayer
+                  mediaFile={mediaFile}
+                  transcription={transcription}
+                  selectedSegmentIndex={activeSegmentIndex}
+                  onProgress={(segmentIndex, segment) => {
+                    setActiveSegmentIndex(segmentIndex);
+                    setCurrentSegment(segment);
+                  }}
+                  onSegmentComplete={(segmentIndex, segment) => {
+                    // Handle segment completion for analytics or progress tracking
+                    console.log('Segment completed:', segmentIndex, segment);
+                  }}
+                  onSegmentChange={handleSegmentChange}
+                  onPlayerReady={setEslVideoPlayerAPI}
+                  className="w-full h-full"
+                />
+              </div>
+
+            </div>
+
+            {/* Transcript Panel Column - Fixed width */}
+            <div className="w-1/3 border-l border-gray-200 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
                   <div className="flex items-center gap-3">
@@ -375,12 +327,40 @@ export const PlayerPage = () => {
                     </label>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">
-                  {focusMode
-                    ? "Showing segments around current position • Free scrolling disabled"
-                    : "Click any segment to jump to that part • Free scrolling enabled"
-                  }
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    {focusMode
+                      ? "Auto-scroll disabled"
+                      : "Click segments to jump"
+                    }
+                  </p>
+                  {/* Download Options - Compact */}
+                  {transcription && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => downloadSubtitle('vtt')}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        title="Download VTT"
+                      >
+                        VTT
+                      </button>
+                      <button
+                        onClick={() => downloadSubtitle('srt')}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        title="Download SRT"
+                      >
+                        SRT
+                      </button>
+                      <button
+                        onClick={() => downloadSubtitle('txt')}
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        title="Download TXT"
+                      >
+                        TXT
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex-1 overflow-hidden">
@@ -430,21 +410,9 @@ export const PlayerPage = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Fallback for incomplete transcription */}
-      {mediaFile.is_completed && !transcription && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Transcription Results</h2>
-          <p className="text-gray-500 text-center py-8">Transcription data not available</p>
-        </div>
-      )}
-
-      {/* Debug Information */}
-      {mediaFile && (
-        <DebugPanel mediaFile={mediaFile} />
-      )}
     </div>
   );
 };

@@ -2,7 +2,9 @@
 
 .esl-video-player {
   /* Container styles */
-  scroll-behavior: smooth;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .esl-video-player .video-js {
@@ -11,38 +13,26 @@
   height: auto !important;
 }
 
-/* Prevent page scrolling when navigating segments */
+/* Focus styles for accessibility */
 .esl-video-player button:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
-  scroll-margin-top: 2rem;
 }
 
-/* Ensure player container stays in view */
-.esl-video-player {
-  scroll-margin-top: 5rem;
-}
-
-/* Fix layout stability */
+/* Fixed layout container */
 .player-layout-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  min-height: 0;
+  display: flex;
+  height: 100%;
+  gap: 1rem;
 }
 
-@media (min-width: 1024px) {
-  .player-layout-container {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-/* Prevent page scrolling on segment navigation */
+/* Transcript panel scrolling */
 .transcript-panel {
   overflow-y: auto;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e0 #f7fafc;
+  height: 100%;
 }
 
 .transcript-panel::-webkit-scrollbar {
@@ -66,13 +56,6 @@
 /* Smooth scrolling for active segment */
 .transcript-panel .group {
   scroll-margin-top: 1rem;
-}
-
-/* Player sticky positioning */
-.esl-video-player .sticky {
-  position: sticky;
-  top: 5rem;
-  z-index: 10;
 }
 
 /* Focus mode styling */

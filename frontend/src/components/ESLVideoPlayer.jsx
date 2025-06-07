@@ -497,9 +497,9 @@ export const ESLVideoPlayer = ({
   const currentSegmentData = segments[currentSegment] || (segments.length > 0 ? segments[0] : null);
 
   return (
-    <div className={`esl-video-player ${className} flex flex-col`}>
-      {/* Main Video Player Container with Modern Styling - Sticky */}
-      <div className="relative mb-6 bg-black rounded-2xl overflow-hidden shadow-2xl sticky top-20 z-10">
+    <div className={`esl-video-player ${className} h-full flex flex-col`}>
+      {/* Main Video Player Container with Modern Styling - Fixed */}
+      <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl flex-shrink-0">
         <VideoPlayer
           mediaFile={mediaFile}
           transcription={transcription}
@@ -548,13 +548,13 @@ export const ESLVideoPlayer = ({
         </div>
       </div>
 
-      {/* Modern ESL Controls - Scrollable */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-h-[60vh] overflow-y-auto">
+      {/* Modern ESL Controls - Fixed height */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-1 flex flex-col mt-4">
         {/* Header with Segment Info */}
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-100">
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Learning Controls</h3>
+              <h3 className="text-base font-bold text-gray-900">Learning Controls</h3>
               <p className="text-sm text-gray-600">
                 Segment {currentSegment + 1} of {segments.length}
                 {currentSegmentData && (
@@ -563,18 +563,18 @@ export const ESLVideoPlayer = ({
               </p>
             </div>
             {playbackMode === 'repeat' && (
-              <div className="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-sm font-medium">
+              <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
                 Repeat {repeatCount + 1}/{maxRepeats}
               </div>
             )}
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 overflow-y-auto flex-1">
           {/* Learning Mode Selection */}
-          <div className="mb-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Learning Mode</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Learning Mode</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => setMode('normal')}
                 className={`group relative p-4 rounded-xl border-2 transition-all duration-200 ${
@@ -634,8 +634,8 @@ export const ESLVideoPlayer = ({
           </div>
 
           {/* Segment Navigation */}
-          <div className="mb-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide">Navigation</h4>
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Navigation</h4>
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={(e) => {
@@ -682,9 +682,9 @@ export const ESLVideoPlayer = ({
 
           {/* Current Segment Display */}
           {currentSegmentData && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 mb-6 border border-gray-100">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Current Segment</h4>
-              <p className="text-xl leading-relaxed text-gray-900 font-medium mb-3">
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 mb-4 border border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Current Segment</h4>
+              <p className="text-lg leading-relaxed text-gray-900 font-medium mb-2">
                 {currentSegmentData.text}
               </p>
               <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -705,7 +705,7 @@ export const ESLVideoPlayer = ({
           )}
 
           {/* Settings Panel */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Playback Settings */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Playback Settings</h4>
@@ -775,8 +775,8 @@ export const ESLVideoPlayer = ({
           </div>
 
           {/* Keyboard Shortcuts Info */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 rounded-xl p-4">
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="bg-blue-50 rounded-xl p-3">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">💡 Keyboard Shortcuts</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-800">
                 <div><kbd className="px-2 py-1 bg-white rounded text-xs">Space</kbd> Play current segment</div>

@@ -20,10 +20,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
           <Navbar />
 
-          <main className="w-full px-6 py-8">
+          <main className="flex-1 w-full overflow-hidden">
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />

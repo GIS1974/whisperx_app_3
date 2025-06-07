@@ -75,7 +75,7 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 overflow-y-auto h-full">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
