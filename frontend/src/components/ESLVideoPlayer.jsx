@@ -499,7 +499,7 @@ export const ESLVideoPlayer = ({
   return (
     <div className={`esl-video-player ${className} h-full flex flex-col`}>
       {/* Main Video Player Container with Modern Styling - Fixed */}
-      <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl flex-shrink-0">
+      <div className="relative bg-black rounded-xl overflow-hidden shadow-xl flex-shrink-0">
         <VideoPlayer
           mediaFile={mediaFile}
           transcription={transcription}
@@ -509,144 +509,111 @@ export const ESLVideoPlayer = ({
 
         {/* Subtitle Overlay - Positioned over video with transparency */}
         {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-5xl px-6 pointer-events-none">
-            <div className="bg-black/70 backdrop-blur-md rounded-2xl px-8 py-6 text-center shadow-2xl border border-white/10">
-              <p className="text-2xl md:text-3xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
+          <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-4 pointer-events-none">
+            <div className="bg-black/70 backdrop-blur-md rounded-xl px-6 py-4 text-center shadow-xl border border-white/10">
+              <p className="text-xl md:text-2xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
                 {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
               </p>
             </div>
           </div>
         )}
 
-        {/* Word Highlighting Overlay - Disabled for now */}
-        {false && showWordHighlighting && transcription?.has_word_level_vtt && (
-          <WordHighlighter
-            mediaFile={mediaFile}
-            transcription={transcription}
-            playerRef={playerRef}
-            isEnabled={showWordHighlighting}
-            className="absolute inset-0 pointer-events-none"
-          />
-        )}
-
-        {/* Video Overlay Controls - Removed duplicate speed control */}
-        <div className="absolute top-4 right-4 flex items-center gap-3 pointer-events-auto">
+        {/* Video Overlay Controls */}
+        <div className="absolute top-3 right-3 flex items-center gap-2 pointer-events-auto">
           {/* Settings Toggle */}
           <button
             onClick={() => setShowTranscript(!showTranscript)}
-            className={`p-2 rounded-xl backdrop-blur-sm transition-all duration-200 ${
+            className={`p-2 rounded-lg backdrop-blur-sm transition-all duration-200 ${
               showTranscript
                 ? 'bg-blue-600/80 text-white'
                 : 'bg-black/70 text-white/70 hover:text-white'
             }`}
             title="Toggle Subtitles"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
             </svg>
           </button>
         </div>
       </div>
 
-      {/* Modern ESL Controls - Fixed height */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex-1 flex flex-col mt-4">
-        {/* Header with Segment Info */}
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 border-b border-gray-100 flex-shrink-0">
+      {/* Compact ESL Controls - Fixed height, no scrolling */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-2 flex-shrink-0">
+        {/* Compact Header with Segment Info */}
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-3 py-2 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-900">Learning Controls</h3>
-              <p className="text-sm text-gray-600">
-                Segment {currentSegment + 1} of {segments.length}
+            <div className="flex items-center gap-4">
+              <h3 className="text-sm font-bold text-gray-900">Learning Controls</h3>
+              <span className="text-sm text-gray-600">
+                Segment {currentSegment + 1}/{segments.length}
                 {currentSegmentData && (
-                  <span className="ml-2">• {currentSegmentData.duration.toFixed(1)}s</span>
+                  <span className="ml-1">• {currentSegmentData.duration.toFixed(1)}s</span>
                 )}
-              </p>
+              </span>
             </div>
             {playbackMode === 'repeat' && (
               <div className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
-                Repeat {repeatCount + 1}/{maxRepeats}
+                {repeatCount + 1}/{maxRepeats}
               </div>
             )}
           </div>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1">
-          {/* Learning Mode Selection */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Learning Mode</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-3">
+          {/* Compact Learning Mode Selection */}
+          <div className="mb-3">
+            <div className="flex gap-2">
               <button
                 onClick={() => setMode('normal')}
-                className={`group relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
                   playbackMode === 'normal'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center justify-center mb-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="text-sm font-medium">Normal Play</div>
-                <div className="text-xs text-gray-500 mt-1">Continuous playback</div>
+                <div className="text-sm font-medium">Normal</div>
+                <div className="text-xs text-gray-500">Continuous</div>
               </button>
 
               <button
                 onClick={() => setMode('listen')}
-                className={`group relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
                   playbackMode === 'listen'
                     ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center justify-center mb-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  </svg>
-                </div>
-                <div className="text-sm font-medium">Listen Mode</div>
-                <div className="text-xs text-gray-500 mt-1">Segment by segment</div>
+                <div className="text-sm font-medium">Listen</div>
+                <div className="text-xs text-gray-500">Segment</div>
               </button>
 
               <button
                 onClick={() => setMode('repeat')}
-                className={`group relative p-4 rounded-xl border-2 transition-all duration-200 ${
+                className={`flex-1 p-2 rounded-lg border transition-all duration-200 ${
                   playbackMode === 'repeat'
                     ? 'border-orange-500 bg-orange-50 text-orange-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center justify-center mb-2">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </div>
-                <div className="text-sm font-medium">Repeat Mode</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  Practice segments
-                  {currentSegmentData?.words?.length > 0 && (
-                    <span className="block text-blue-600">with enhanced word-level timing</span>
-                  )}
-                </div>
+                <div className="text-sm font-medium">Repeat</div>
+                <div className="text-xs text-gray-500">Practice</div>
               </button>
             </div>
           </div>
 
-          {/* Segment Navigation */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Navigation</h4>
-            <div className="flex items-center justify-center gap-4">
+          {/* Compact Navigation */}
+          <div className="mb-3">
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   goToPreviousSegment(e);
                 }}
                 disabled={currentSegment === 0}
-                className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 title="Previous Segment"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
                 </svg>
               </button>
@@ -656,12 +623,12 @@ export const ESLVideoPlayer = ({
                   e.preventDefault();
                   playCurrentSegment();
                 }}
-                className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all duration-200 flex items-center gap-2"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Play Segment
+                Play
               </button>
 
               <button
@@ -670,120 +637,82 @@ export const ESLVideoPlayer = ({
                   goToNextSegment(e);
                 }}
                 disabled={currentSegment === segments.length - 1}
-                className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 title="Next Segment"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Current Segment Display */}
+          {/* Compact Current Segment Display */}
           {currentSegmentData && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 mb-4 border border-gray-100">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">Current Segment</h4>
-              <p className="text-lg leading-relaxed text-gray-900 font-medium mb-2">
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-3 mb-3 border border-gray-100">
+              <p className="text-sm leading-relaxed text-gray-900 font-medium mb-1">
                 {currentSegmentData.text}
               </p>
-              <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {currentSegmentData.duration.toFixed(1)}s
-                </span>
-                <span className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
-                  </svg>
-                  {Math.floor(currentSegmentData.start / 60)}:{Math.floor(currentSegmentData.start % 60).toString().padStart(2, '0')} - {Math.floor(currentSegmentData.end / 60)}:{Math.floor(currentSegmentData.end % 60).toString().padStart(2, '0')}
-                </span>
+              <div className="flex items-center gap-3 text-xs text-gray-600">
+                <span>{currentSegmentData.duration.toFixed(1)}s</span>
+                <span>{Math.floor(currentSegmentData.start / 60)}:{Math.floor(currentSegmentData.start % 60).toString().padStart(2, '0')} - {Math.floor(currentSegmentData.end / 60)}:{Math.floor(currentSegmentData.end % 60).toString().padStart(2, '0')}</span>
               </div>
             </div>
           )}
 
-          {/* Settings Panel */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Compact Settings Panel */}
+          <div className="grid grid-cols-2 gap-3">
             {/* Playback Settings */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Playback Settings</h4>
-
-              {/* Speed Control */}
+            <div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Playback Speed</label>
+                <label className="text-xs font-medium text-gray-700">Speed</label>
                 <select
                   value={playbackSpeed}
                   onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value={0.5}>0.5x (Slow)</option>
+                  <option value={0.5}>0.5x</option>
                   <option value={0.75}>0.75x</option>
-                  <option value={1}>1x (Normal)</option>
+                  <option value={1}>1x</option>
                   <option value={1.25}>1.25x</option>
-                  <option value={1.5}>1.5x (Fast)</option>
+                  <option value={1.5}>1.5x</option>
                 </select>
               </div>
 
               {playbackMode === 'repeat' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Max Repeats</label>
+                <div className="space-y-2 mt-2">
+                  <label className="text-xs font-medium text-gray-700">Repeats</label>
                   <select
                     value={maxRepeats}
                     onChange={(e) => setMaxRepeats(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value={1}>1 time</option>
-                    <option value={2}>2 times</option>
-                    <option value={3}>3 times</option>
-                    <option value={5}>5 times</option>
-                    <option value={10}>10 times</option>
+                    <option value={1}>1x</option>
+                    <option value={2}>2x</option>
+                    <option value={3}>3x</option>
+                    <option value={5}>5x</option>
+                    <option value={10}>10x</option>
                   </select>
                 </div>
               )}
             </div>
 
             {/* Display Settings */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Display Settings</h4>
-
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
+            <div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={showTranscript}
                     onChange={(e) => setShowTranscript(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Show Subtitles</span>
+                  <span className="text-xs font-medium text-gray-700">Subtitles</span>
                 </label>
-
-                {transcription?.has_word_level_vtt && (
-                  <label className="flex items-center gap-3 cursor-pointer opacity-50">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      disabled={true}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Word Highlighting (Coming Soon)</span>
-                  </label>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Keyboard Shortcuts Info */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="bg-blue-50 rounded-xl p-3">
-              <h4 className="text-sm font-semibold text-blue-900 mb-2">💡 Keyboard Shortcuts</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-blue-800">
-                <div><kbd className="px-2 py-1 bg-white rounded text-xs">Space</kbd> Play current segment</div>
-                <div><kbd className="px-2 py-1 bg-white rounded text-xs">←/→</kbd> Previous/Next segment</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

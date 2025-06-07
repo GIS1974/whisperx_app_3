@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { mediaAPI, uploadUtils } from '../services/api';
 import { formatFileSize, formatProgress } from '../utils/formatters';
+import { DebugPanel } from '../components/DebugPanel';
 
 export const UploadPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -317,6 +318,18 @@ export const UploadPage = () => {
           </li>
         </ul>
       </div>
+
+      {/* Debug Panel for development */}
+      {import.meta.env.DEV && (
+        <div className="card">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Development Debug</h3>
+          <div className="text-sm text-gray-600">
+            <p><strong>Environment:</strong> {import.meta.env.MODE}</p>
+            <p><strong>API Base URL:</strong> {import.meta.env.VITE_API_BASE_URL}</p>
+            <p><strong>Build Time:</strong> {new Date().toISOString()}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

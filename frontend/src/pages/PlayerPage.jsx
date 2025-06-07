@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { mediaAPI, transcriptionAPI } from '../services/api';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { DebugPanel } from '../components/DebugPanel';
+
 import { ESLVideoPlayer } from '../components/ESLVideoPlayer';
 import { TranscriptPanel } from '../components/TranscriptPanel';
 
