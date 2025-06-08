@@ -364,21 +364,9 @@ export const WordHighlighter = ({
     );
   }
 
-  // For now, just show basic subtitles without word highlighting
-  return (
-    <div className={`subtitle-overlay ${className}`} ref={overlayRef} style={{ zIndex: 100, pointerEvents: 'none' }}>
-      {/* Modern subtitle display positioned over video */}
-      {displayData ? (
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6">
-          <div className="bg-black/80 backdrop-blur-sm rounded-xl px-8 py-4 text-center shadow-2xl border border-white/10">
-            <div className="text-2xl leading-relaxed text-white font-medium tracking-wide">
-              {displayData.segment.text}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
+  // Don't render subtitles here - let ESLVideoPlayer handle subtitle display
+  // This prevents subtitle blinking/jumping issues
+  return null;
 };
 
 export default WordHighlighter;

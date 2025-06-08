@@ -14,6 +14,53 @@
   object-fit: contain;
 }
 
+/* Hide all Video.js controls completely */
+.esl-video-player .video-js .vjs-control-bar,
+.esl-video-player .video-js .vjs-big-play-button,
+.esl-video-player .video-js .vjs-loading-spinner,
+.esl-video-player .video-js .vjs-menu-button,
+.esl-video-player .video-js .vjs-play-control,
+.esl-video-player .video-js .vjs-volume-panel,
+.esl-video-player .video-js .vjs-current-time,
+.esl-video-player .video-js .vjs-time-divider,
+.esl-video-player .video-js .vjs-duration,
+.esl-video-player .video-js .vjs-progress-control,
+.esl-video-player .video-js .vjs-fullscreen-control,
+.esl-video-player .video-js .vjs-remaining-time,
+.esl-video-player .video-js .vjs-playback-rate,
+.esl-video-player .video-js .vjs-chapters-button,
+.esl-video-player .video-js .vjs-descriptions-button,
+.esl-video-player .video-js .vjs-captions-button,
+.esl-video-player .video-js .vjs-subtitles-button,
+.esl-video-player .video-js .vjs-audio-button,
+.esl-video-player .video-js .vjs-picture-in-picture-control {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide native browser video controls */
+.esl-video-player video::-webkit-media-controls,
+.esl-video-player video::-webkit-media-controls-enclosure,
+.esl-video-player video::-webkit-media-controls-panel,
+.esl-video-player video::-webkit-media-controls-play-button,
+.esl-video-player video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
+
+.esl-video-player video::-moz-media-controls {
+  display: none !important;
+}
+
+.esl-video-player video {
+  /* Disable native controls completely */
+  -webkit-media-controls: none !important;
+  -moz-media-controls: none !important;
+  media-controls: none !important;
+}
+
 /* Video player container with proper aspect ratio handling */
 .video-player-container {
   position: relative;

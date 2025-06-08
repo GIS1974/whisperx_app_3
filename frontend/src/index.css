@@ -92,6 +92,35 @@
   font-family: 'Inter', system-ui, sans-serif;
 }
 
+/* Disable ALL native browser video controls */
+.esl-video-player video,
+.esl-video-player .video-js video {
+  -webkit-media-controls: none !important;
+  -moz-media-controls: none !important;
+  media-controls: none !important;
+}
+
+.esl-video-player video::-webkit-media-controls,
+.esl-video-player video::-webkit-media-controls-enclosure,
+.esl-video-player video::-webkit-media-controls-panel,
+.esl-video-player video::-webkit-media-controls-play-button,
+.esl-video-player video::-webkit-media-controls-start-playback-button,
+.esl-video-player video::-webkit-media-controls-timeline,
+.esl-video-player video::-webkit-media-controls-current-time-display,
+.esl-video-player video::-webkit-media-controls-time-remaining-display,
+.esl-video-player video::-webkit-media-controls-mute-button,
+.esl-video-player video::-webkit-media-controls-volume-slider,
+.esl-video-player video::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.esl-video-player video::-moz-media-controls {
+  display: none !important;
+}
+
 .video-js .vjs-big-play-button {
   background-color: rgba(37, 99, 235, 0.9);
   border: none;
@@ -216,17 +245,27 @@
   order: 10;
 }
 
-/* Hide Video.js control bar since we have custom overlay */
-.esl-video-player .video-js .vjs-control-bar {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-/* Keep progress bar visible but hide other controls */
-.esl-video-player .video-js .vjs-progress-control {
-  opacity: 0;
-  visibility: hidden;
+/* Hide ALL Video.js controls completely in ESL player */
+.esl-video-player .video-js .vjs-control-bar,
+.esl-video-player .video-js .vjs-big-play-button,
+.esl-video-player .video-js .vjs-loading-spinner,
+.esl-video-player .video-js .vjs-progress-control,
+.esl-video-player .video-js .vjs-play-control,
+.esl-video-player .video-js .vjs-volume-panel,
+.esl-video-player .video-js .vjs-current-time,
+.esl-video-player .video-js .vjs-time-divider,
+.esl-video-player .video-js .vjs-duration,
+.esl-video-player .video-js .vjs-fullscreen-control,
+.esl-video-player .video-js .vjs-remaining-time,
+.esl-video-player .video-js .vjs-playback-rate,
+.esl-video-player .video-js .vjs-menu-button {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Custom subtitle styling */

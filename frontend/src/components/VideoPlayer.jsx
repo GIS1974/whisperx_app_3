@@ -32,7 +32,24 @@ export const VideoPlayer = ({
           fluid: true,
           playbackRates: [], // Remove built-in speed controls to avoid duplication
           preload: 'metadata',
-          errorDisplay: true,
+          errorDisplay: false, // Disable error display overlay
+          bigPlayButton: false, // Disable big play button
+          loadingSpinner: false, // Disable loading spinner
+          textTrackDisplay: false, // Disable text track display
+          posterImage: false, // Disable poster image
+          userActions: {
+            hotkeys: false, // Disable keyboard shortcuts
+            click: false, // Disable click to play/pause
+            doubleClick: false // Disable double-click for fullscreen
+          },
+          // Additional options to completely disable controls
+          html5: {
+            vhs: {
+              overrideNative: true
+            }
+          },
+          techOrder: ['html5'],
+          sources: []
         }, () => {
           setIsLoading(false);
           if (onReady) {
@@ -327,6 +344,10 @@ export const VideoPlayer = ({
           preload="auto"
           data-setup="{}"
           onClick={onVideoClick}
+          controls={false}
+          controlsList="nodownload nofullscreen noremoteplayback"
+          disablePictureInPicture={true}
+          playsInline={true}
         >
           <p className="vjs-no-js">
             To view this video, please enable JavaScript, and consider upgrading to a web browser that
