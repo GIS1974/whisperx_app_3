@@ -149,9 +149,16 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
     setActiveSegmentIndex(segmentIndex);
     setCurrentSegment(segment);
 
-    // Trigger playback through ESLVideoPlayer
-    if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
-      eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+    // Switch to repeat mode and trigger playback through ESLVideoPlayer
+    if (eslVideoPlayerAPI) {
+      // First switch to repeat mode
+      if (eslVideoPlayerAPI.setMode) {
+        eslVideoPlayerAPI.setMode('repeat');
+      }
+      // Then play the segment
+      if (eslVideoPlayerAPI.playSegmentByIndex) {
+        eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+      }
     }
   };
 
@@ -323,9 +330,16 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
                           setActiveSegmentIndex(segmentIndex);
                           setCurrentSegment(segment);
 
-                          // Trigger playback through ESLVideoPlayer
-                          if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
-                            eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                          // Switch to repeat mode and trigger playback through ESLVideoPlayer
+                          if (eslVideoPlayerAPI) {
+                            // First switch to repeat mode
+                            if (eslVideoPlayerAPI.setMode) {
+                              eslVideoPlayerAPI.setMode('repeat');
+                            }
+                            // Then play the segment
+                            if (eslVideoPlayerAPI.playSegmentByIndex) {
+                              eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                            }
                           }
                         }
                       }}

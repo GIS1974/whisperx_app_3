@@ -16,8 +16,6 @@ export const ESLVideoPlayer = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackMode, setPlaybackMode] = useState('normal'); // 'normal', 'listen', 'repeat'
   const [segments, setSegments] = useState([]);
-  const [repeatCount, setRepeatCount] = useState(0);
-  const [maxRepeats] = useState(3);
   const [showTranscript, setShowTranscript] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
@@ -353,17 +351,13 @@ export const ESLVideoPlayer = ({
   // Handle video end
   const handleVideoEnd = () => {
     setIsPlaying(false);
-    if (playbackMode === 'repeat' && repeatCount < maxRepeats) {
-      setTimeout(() => {
-        playCurrentSegment();
-        setRepeatCount(prev => prev + 1);
-      }, 1000);
-    } else if (playbackMode === 'listen' && currentSegment < segments.length - 1) {
+    if (playbackMode === 'listen' && currentSegment < segments.length - 1) {
       // Auto-advance to next segment in listen mode
       setTimeout(() => {
         goToSegment(currentSegment + 1);
       }, 1500);
     }
+    // Note: Removed auto-repeat logic for repeat mode - it should pause at the end
   };
 
   // Play specific segment by index
@@ -456,7 +450,12 @@ export const ESLVideoPlayer = ({
 
   // Handle video area click for play/pause
   const handleVideoClick = () => {
-    togglePlayPause();
+    // If in repeat mode, clicking video should return to normal mode
+    if (playbackMode === 'repeat') {
+      setMode('normal');
+    } else {
+      togglePlayPause();
+    }
   };
 
   // Progress bar drag functionality
@@ -549,7 +548,6 @@ export const ESLVideoPlayer = ({
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
 
     setCurrentSegment(segmentIndex);
-    setRepeatCount(0);
 
     // Notify parent component of segment change
     if (onProgress) {
@@ -574,11 +572,19 @@ export const ESLVideoPlayer = ({
 
   // Toggle playback modes
   const setMode = (mode) => {
+    const previousMode = playbackMode;
     setPlaybackMode(mode);
-    setRepeatCount(0);
-    
-    if (mode === 'listen' || mode === 'repeat') {
+
+    if (mode === 'listen') {
       playCurrentSegment();
+    } else if (mode === 'repeat') {
+      // In repeat mode, play the current segment and pause at the end
+      playCurrentSegment();
+    } else if (mode === 'normal' && (previousMode === 'repeat' || previousMode === 'listen')) {
+      // When switching from repeat/listen to normal, pause the video
+      if (playerRef.current) {
+        playerRef.current.pause();
+      }
     }
   };
 
@@ -620,6 +626,9 @@ export const ESLVideoPlayer = ({
         },
         goToSegment: (segmentIndex) => {
           goToSegment(segmentIndex);
+        },
+        setMode: (mode) => {
+          setMode(mode);
         },
         // Expose player reference for TranscriptPanel
         playerRef: playerRef,
@@ -762,7 +771,14 @@ export const ESLVideoPlayer = ({
                   LISTEN
                 </button>
                 <button
-                  onClick={() => setMode('repeat')}
+                  onClick={() => {
+                    // If already in repeat mode, clicking repeat button should return to normal mode
+                    if (playbackMode === 'repeat') {
+                      setMode('normal');
+                    } else {
+                      setMode('repeat');
+                    }
+                  }}
                   className={`modern-mode-btn ${
                     playbackMode === 'repeat'
                       ? 'bg-orange-600 text-white shadow-lg'
