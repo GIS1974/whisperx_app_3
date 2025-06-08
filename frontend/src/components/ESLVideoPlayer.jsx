@@ -288,7 +288,7 @@ export const ESLVideoPlayer = ({
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [currentSegment, segments]);
+  }, [currentSegment, segments, playbackMode, isPlaying]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -438,8 +438,50 @@ export const ESLVideoPlayer = ({
       } else {
         playVideo();
       }
+    } else if (playbackMode === 'repeat') {
+      // Repeat mode - special handling for pause/resume
+      if (isPlaying) {
+        pauseVideo();
+      } else {
+        // Check if we're within the current segment bounds
+        const currentTime = playerRef.current.currentTime();
+        const currentSegmentData = segments[currentSegment];
+
+        if (currentSegmentData &&
+            currentTime >= currentSegmentData.start &&
+            currentTime <= currentSegmentData.end) {
+          // We're within the segment, just resume playback
+          playVideo();
+
+          // Set up the end-time checker for the remaining time
+          if (segmentTimeoutRef.current) {
+            clearTimeout(segmentTimeoutRef.current);
+          }
+
+          const timing = calculatePreciseTiming(currentSegmentData);
+          const checkEndTime = () => {
+            if (!playerRef.current) return;
+            const currentTime = playerRef.current.currentTime();
+
+            if (currentTime >= timing.endTime) {
+              playerRef.current.pause();
+              if (onSegmentComplete) {
+                onSegmentComplete(currentSegment, currentSegmentData);
+              }
+              return;
+            }
+
+            segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
+          };
+
+          segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
+        } else {
+          // We're outside the segment, restart from beginning
+          playCurrentSegment();
+        }
+      }
     } else {
-      // ESL modes - use segment-based playback
+      // Other ESL modes (listen) - use segment-based playback
       if (isPlaying) {
         pauseVideo();
       } else {
