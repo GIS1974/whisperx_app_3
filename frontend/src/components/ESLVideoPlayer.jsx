@@ -22,6 +22,8 @@ export const ESLVideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [volume, setVolume] = useState(1); // Volume from 0 to 1
+  const [isMuted, setIsMuted] = useState(false);
 
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
@@ -341,6 +343,9 @@ export const ESLVideoPlayer = ({
       setBuffered(bufferedEnd);
     });
 
+    // Initialize volume
+    player.volume(volume);
+
     // Initialize subtitle display after player is ready
     setTimeout(() => {
       if (segments.length > 0) {
@@ -655,6 +660,33 @@ export const ESLVideoPlayer = ({
     }
   };
 
+  // Volume control
+  const changeVolume = (newVolume) => {
+    const clampedVolume = Math.max(0, Math.min(1, newVolume));
+    setVolume(clampedVolume);
+    if (playerRef.current) {
+      playerRef.current.volume(clampedVolume);
+      if (clampedVolume === 0) {
+        setIsMuted(true);
+      } else {
+        setIsMuted(false);
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (playerRef.current) {
+      if (isMuted) {
+        // Unmute - restore previous volume
+        const volumeToRestore = volume === 0 ? 0.5 : volume;
+        changeVolume(volumeToRestore);
+      } else {
+        // Mute - save current volume and set to 0
+        changeVolume(0);
+      }
+    }
+  };
+
   // Expose functions to parent component through callback
   useEffect(() => {
     if (onPlayerReady) {
@@ -846,14 +878,38 @@ export const ESLVideoPlayer = ({
             {/* Right Side - Settings Controls */}
             <div className="flex items-center gap-3">
               {/* Volume Control */}
-              <button
-                className="modern-control-btn"
-                title="Volume"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l4-2V7l-4-2z" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleMute}
+                  className="modern-control-btn"
+                  title={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted || volume === 0 ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                  ) : volume < 0.5 ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M9 9v6l4-2V7l-4-2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l4-2V7l-4-2z" />
+                    </svg>
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={volume}
+                  onChange={(e) => changeVolume(parseFloat(e.target.value))}
+                  className="modern-volume-slider"
+                  title={`Volume: ${Math.round(volume * 100)}%`}
+                />
+              </div>
 
               {/* Playback Speed */}
               <select
