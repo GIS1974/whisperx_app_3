@@ -26,10 +26,14 @@ export const ESLVideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [forceSubtitleDisplay, setForceSubtitleDisplay] = useState(false);
-  
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartTime, setDragStartTime] = useState(0);
+
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
   const timeUpdateIntervalRef = useRef(null);
+  const progressBarRef = useRef(null);
 
   // Helper function to format time in MM:SS format
   const formatTime = (seconds) => {
@@ -447,6 +451,64 @@ export const ESLVideoPlayer = ({
     togglePlayPause();
   };
 
+  // Progress bar drag functionality
+  const handleProgressBarClick = (e) => {
+    if (!playerRef.current || !duration || isDragging) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const newTime = percentage * duration;
+    playerRef.current.currentTime(newTime);
+  };
+
+  const handleProgressBarMouseDown = (e) => {
+    if (!playerRef.current || !duration) return;
+
+    setIsDragging(true);
+    setDragStartX(e.clientX);
+    setDragStartTime(currentTime);
+
+    // Prevent text selection during drag
+    e.preventDefault();
+  };
+
+  const handleProgressBarMouseMove = (e) => {
+    if (!isDragging || !playerRef.current || !duration || !progressBarRef.current) return;
+
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const currentX = e.clientX;
+    const deltaX = currentX - dragStartX;
+    const deltaPercentage = deltaX / rect.width;
+    const deltaTime = deltaPercentage * duration;
+
+    let newTime = dragStartTime + deltaTime;
+    newTime = Math.max(0, Math.min(newTime, duration));
+
+    // Update video time during drag
+    playerRef.current.currentTime(newTime);
+  };
+
+  const handleProgressBarMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Global mouse event handlers for drag
+  useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e) => handleProgressBarMouseMove(e);
+      const handleGlobalMouseUp = () => handleProgressBarMouseUp();
+
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging, dragStartX, dragStartTime, duration]);
+
   // Navigate to segment start position with enhanced timing (no auto-play)
   const navigateToSegmentStart = (segmentIndex) => {
     if (!playerRef.current || segments.length === 0) return;
@@ -587,15 +649,10 @@ export const ESLVideoPlayer = ({
           <div className="mb-4">
             <div className="custom-progress-bar-control">
               <div
-                className="progress-track-control"
-                onClick={(e) => {
-                  if (!playerRef.current || !duration) return;
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const percentage = clickX / rect.width;
-                  const newTime = percentage * duration;
-                  playerRef.current.currentTime(newTime);
-                }}
+                ref={progressBarRef}
+                className={`progress-track-control ${isDragging ? 'dragging' : ''}`}
+                onClick={handleProgressBarClick}
+                onMouseDown={handleProgressBarMouseDown}
               >
                 {/* Buffered Progress */}
                 <div
@@ -607,7 +664,10 @@ export const ESLVideoPlayer = ({
                   className="play-progress-control"
                   style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
                 >
-                  <div className="progress-handle-control" />
+                  <div
+                    className={`progress-handle-control ${isDragging ? 'dragging' : ''}`}
+                    onMouseDown={handleProgressBarMouseDown}
+                  />
                 </div>
               </div>
             </div>

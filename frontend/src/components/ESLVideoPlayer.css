@@ -318,12 +318,41 @@
   border: 3px solid #3b82f6;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  opacity: 1;
+  transition: all 0.3s ease;
+  cursor: grab;
 }
 
 .progress-track-control:hover .progress-handle-control {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Dragging states */
+.progress-track-control.dragging {
+  cursor: grabbing;
+}
+
+.progress-track-control.dragging .progress-handle-control {
   opacity: 1;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.progress-handle-control {
+  cursor: grab;
+}
+
+.progress-handle-control.dragging {
+  cursor: grabbing;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Always show handle when dragging */
+.progress-track-control.dragging .progress-handle-control,
+.progress-handle-control.dragging {
+  opacity: 1 !important;
 }
 
 /* Control Panel Button Styling */
