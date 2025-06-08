@@ -27,8 +27,6 @@ export const ESLVideoPlayer = ({
   const [buffered, setBuffered] = useState(0);
   const [forceSubtitleDisplay, setForceSubtitleDisplay] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartTime, setDragStartTime] = useState(0);
 
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
@@ -452,46 +450,54 @@ export const ESLVideoPlayer = ({
   };
 
   // Progress bar drag functionality
-  const handleProgressBarClick = (e) => {
+  const handleProgressBarClick = useCallback((e) => {
     if (!playerRef.current || !duration || isDragging) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const percentage = clickX / rect.width;
     const newTime = percentage * duration;
+
+    // Update video time
     playerRef.current.currentTime(newTime);
-  };
 
-  const handleProgressBarMouseDown = (e) => {
-    if (!playerRef.current || !duration) return;
+    // Immediately update React state for instant visual feedback
+    setCurrentTime(newTime);
+  }, [duration, isDragging]);
 
-    setIsDragging(true);
-    setDragStartX(e.clientX);
-    setDragStartTime(currentTime);
-
-    // Prevent text selection during drag
-    e.preventDefault();
-  };
-
-  const handleProgressBarMouseMove = (e) => {
+  const handleProgressBarMouseMove = useCallback((e) => {
     if (!isDragging || !playerRef.current || !duration || !progressBarRef.current) return;
 
     const rect = progressBarRef.current.getBoundingClientRect();
     const currentX = e.clientX;
-    const deltaX = currentX - dragStartX;
-    const deltaPercentage = deltaX / rect.width;
-    const deltaTime = deltaPercentage * duration;
 
-    let newTime = dragStartTime + deltaTime;
-    newTime = Math.max(0, Math.min(newTime, duration));
+    // Calculate position directly from current mouse position (more accurate)
+    const clickX = currentX - rect.left;
+    const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+    const newTime = percentage * duration;
 
     // Update video time during drag
     playerRef.current.currentTime(newTime);
-  };
 
-  const handleProgressBarMouseUp = () => {
+    // Immediately update React state for instant visual feedback
+    setCurrentTime(newTime);
+  }, [isDragging, duration]);
+
+  const handleProgressBarMouseDown = useCallback((e) => {
+    if (!playerRef.current || !duration) return;
+
+    setIsDragging(true);
+
+    // Prevent text selection during drag
+    e.preventDefault();
+
+    // Handle the initial click/drag position immediately
+    handleProgressBarMouseMove(e);
+  }, [duration, handleProgressBarMouseMove]);
+
+  const handleProgressBarMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   // Global mouse event handlers for drag
   useEffect(() => {
@@ -507,7 +513,7 @@ export const ESLVideoPlayer = ({
         document.removeEventListener('mouseup', handleGlobalMouseUp);
       };
     }
-  }, [isDragging, dragStartX, dragStartTime, duration]);
+  }, [isDragging, duration]);
 
   // Navigate to segment start position with enhanced timing (no auto-play)
   const navigateToSegmentStart = (segmentIndex) => {
