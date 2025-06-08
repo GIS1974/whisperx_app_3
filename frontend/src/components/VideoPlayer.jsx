@@ -26,7 +26,7 @@ export const VideoPlayer = ({
 
       try {
         const player = videojs(videoRef.current, {
-          controls: true,
+          controls: false, // Disable native controls to use custom ESL controls
           responsive: true,
           fluid: true,
           playbackRates: [], // Remove built-in speed controls to avoid duplication
@@ -323,7 +323,6 @@ export const VideoPlayer = ({
         <video
           ref={videoRef}
           className="video-js vjs-default-skin w-full h-full"
-          controls
           preload="auto"
           data-setup="{}"
         >

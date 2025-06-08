@@ -541,7 +541,7 @@ export const ESLVideoPlayer = ({
         )}
 
         {/* Custom Progress Bar - Above Control Bar */}
-        <div className="absolute bottom-16 left-4 right-4 pointer-events-auto">
+        <div className="absolute bottom-16 left-4 right-4 pointer-events-auto z-20">
           <div className="custom-progress-bar">
             <div
               className="progress-track"
@@ -571,7 +571,7 @@ export const ESLVideoPlayer = ({
         </div>
 
         {/* Modern Control Bar - Bottom Overlay - Simplified */}
-        <div className="absolute bottom-0 left-0 right-0 control-bar p-4 pointer-events-auto">
+        <div className="absolute bottom-0 left-0 right-0 control-bar p-4 pointer-events-auto z-20">
           <div className="flex items-center justify-between">
             {/* Left Side - Navigation Controls */}
             <div className="flex items-center gap-3">
