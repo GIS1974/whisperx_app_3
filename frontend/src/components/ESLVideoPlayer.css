@@ -511,6 +511,195 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
+/* Modern Control Panel Styles - Completely rebuilt */
+.modern-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.modern-progress-track:hover {
+  height: 8px;
+  background: rgba(148, 163, 184, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.modern-buffered-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.modern-play-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 6px;
+  transition: width 0.1s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.modern-progress-handle {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  opacity: 1;
+  transition: all 0.2s ease;
+  cursor: grab;
+}
+
+.modern-progress-track:hover .modern-progress-handle {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.modern-progress-track.dragging {
+  cursor: grabbing;
+}
+
+.modern-progress-track.dragging .modern-progress-handle {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  cursor: grabbing;
+}
+
+.modern-progress-handle.dragging {
+  cursor: grabbing;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+/* Modern Control Buttons */
+.modern-control-btn {
+  background: rgba(148, 163, 184, 0.15);
+  border: none;
+  border-radius: 8px;
+  padding: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-control-btn:hover {
+  background: rgba(148, 163, 184, 0.25);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modern-control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modern-control-btn:disabled:hover {
+  background: rgba(148, 163, 184, 0.15);
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern Play Button */
+.modern-play-btn {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.2);
+  height: 44px;
+  width: 44px;
+}
+
+.modern-play-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 5px 16px rgba(59, 130, 246, 0.3);
+}
+
+/* Modern Mode Buttons */
+.modern-mode-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modern Time Display */
+.modern-time-display {
+  background: rgba(148, 163, 184, 0.15);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modern Speed Dropdown */
+.modern-speed-dropdown {
+  background: rgba(148, 163, 184, 0.15);
+  color: white;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  height: 36px;
+  min-width: 60px;
+}
+
+.modern-speed-dropdown:hover {
+  background: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.modern-speed-dropdown:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .mode-dropdown {
@@ -562,6 +751,36 @@
     font-size: 10px;
   }
 
+  .modern-control-btn {
+    padding: 6px;
+    height: 32px;
+    width: 32px;
+  }
+
+  .modern-play-btn {
+    height: 36px;
+    width: 36px;
+  }
+
+  .modern-mode-btn {
+    padding: 6px 12px;
+    font-size: 10px;
+    height: 32px;
+  }
+
+  .modern-time-display {
+    padding: 6px 10px;
+    font-size: 12px;
+    height: 32px;
+  }
+
+  .modern-speed-dropdown {
+    padding: 6px 10px;
+    font-size: 11px;
+    height: 32px;
+    min-width: 50px;
+  }
+
   .subtitle-overlay {
     padding: 16px 20px;
     margin: 0 16px;
@@ -582,6 +801,20 @@
   }
 
   .progress-handle-control {
+    width: 12px;
+    height: 12px;
+    right: -6px;
+  }
+
+  .modern-progress-track {
+    height: 4px;
+  }
+
+  .modern-progress-track:hover {
+    height: 6px;
+  }
+
+  .modern-progress-handle {
     width: 12px;
     height: 12px;
     right: -6px;

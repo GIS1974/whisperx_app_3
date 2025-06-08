@@ -655,48 +655,46 @@ export const ESLVideoPlayer = ({
         )}
       </div>
 
-      {/* Integrated Control Panel - Single modern navbar */}
-      <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden mt-3 flex-shrink-0" style={{ height: '80px' }}>
-        <div className="px-6 py-4">
-          {/* Progress Bar - Thinner and more integrated */}
-          <div className="mb-4">
-            <div className="custom-progress-bar-control">
+      {/* Modern Control Panel - Completely rebuilt */}
+      <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden mt-3 flex-shrink-0">
+        <div className="p-4 space-y-3">
+          {/* Progress Bar Section - Standalone */}
+          <div className="w-full">
+            <div
+              ref={progressBarRef}
+              className={`modern-progress-track ${isDragging ? 'dragging' : ''}`}
+              onClick={handleProgressBarClick}
+              onMouseDown={handleProgressBarMouseDown}
+            >
+              {/* Buffered Progress */}
               <div
-                ref={progressBarRef}
-                className={`progress-track-control ${isDragging ? 'dragging' : ''}`}
-                onClick={handleProgressBarClick}
-                onMouseDown={handleProgressBarMouseDown}
+                className="modern-buffered-progress"
+                style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}
+              />
+              {/* Play Progress */}
+              <div
+                className="modern-play-progress"
+                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
               >
-                {/* Buffered Progress */}
                 <div
-                  className="buffered-progress-control"
-                  style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}
+                  className={`modern-progress-handle ${isDragging ? 'dragging' : ''}`}
+                  onMouseDown={handleProgressBarMouseDown}
                 />
-                {/* Play Progress */}
-                <div
-                  className="play-progress-control"
-                  style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-                >
-                  <div
-                    className={`progress-handle-control ${isDragging ? 'dragging' : ''}`}
-                    onMouseDown={handleProgressBarMouseDown}
-                  />
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Integrated Control Row - Compact like reference image */}
-          <div className="flex items-center justify-between">
+          {/* Control Buttons Row - Properly sized and spaced */}
+          <div className="flex items-center justify-between h-10">
             {/* Left Side - Navigation Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   goToPreviousSegment(e);
                 }}
                 disabled={currentSegment === 0}
-                className="control-button-compact"
+                className="modern-control-btn"
                 title="Previous Phrase"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -709,7 +707,7 @@ export const ESLVideoPlayer = ({
                   e.preventDefault();
                   togglePlayPause();
                 }}
-                className="control-button-compact play-button-compact"
+                className="modern-control-btn modern-play-btn"
                 title={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
@@ -730,7 +728,7 @@ export const ESLVideoPlayer = ({
                   goToNextSegment(e);
                 }}
                 disabled={currentSegment === segments.length - 1}
-                className="control-button-compact"
+                className="modern-control-btn"
                 title="Next Phrase"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -739,15 +737,15 @@ export const ESLVideoPlayer = ({
               </button>
             </div>
 
-            {/* Center - Time Display and ESL Mode Controls */}
+            {/* Center - ESL Mode Controls and Time Display */}
             <div className="flex items-center gap-4">
               {/* ESL Mode Buttons */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMode('normal')}
-                  className={`mode-button-compact ${
+                  className={`modern-mode-btn ${
                     playbackMode === 'normal'
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                   }`}
                 >
@@ -755,9 +753,9 @@ export const ESLVideoPlayer = ({
                 </button>
                 <button
                   onClick={() => setMode('listen')}
-                  className={`mode-button-compact ${
+                  className={`modern-mode-btn ${
                     playbackMode === 'listen'
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-green-600 text-white shadow-lg'
                       : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                   }`}
                 >
@@ -765,9 +763,9 @@ export const ESLVideoPlayer = ({
                 </button>
                 <button
                   onClick={() => setMode('repeat')}
-                  className={`mode-button-compact ${
+                  className={`modern-mode-btn ${
                     playbackMode === 'repeat'
-                      ? 'bg-orange-600 text-white'
+                      ? 'bg-orange-600 text-white shadow-lg'
                       : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                   }`}
                 >
@@ -776,16 +774,16 @@ export const ESLVideoPlayer = ({
               </div>
 
               {/* Time Display */}
-              <div className="text-white text-sm font-medium bg-slate-700 px-3 py-1 rounded-lg">
+              <div className="modern-time-display">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
             </div>
 
             {/* Right Side - Settings Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Volume Control */}
               <button
-                className="control-button-compact"
+                className="modern-control-btn"
                 title="Volume"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -794,26 +792,24 @@ export const ESLVideoPlayer = ({
               </button>
 
               {/* Playback Speed */}
-              <div className="relative">
-                <select
-                  value={playbackSpeed}
-                  onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-                  className="speed-dropdown-compact"
-                >
-                  <option value={0.5} className="text-black">0.5x</option>
-                  <option value={0.75} className="text-black">0.75x</option>
-                  <option value={1} className="text-black">1x</option>
-                  <option value={1.25} className="text-black">1.25x</option>
-                  <option value={1.5} className="text-black">1.5x</option>
-                </select>
-              </div>
+              <select
+                value={playbackSpeed}
+                onChange={(e) => changeSpeed(parseFloat(e.target.value))}
+                className="modern-speed-dropdown"
+              >
+                <option value={0.5} className="text-black">0.5x</option>
+                <option value={0.75} className="text-black">0.75x</option>
+                <option value={1} className="text-black">1x</option>
+                <option value={1.25} className="text-black">1.25x</option>
+                <option value={1.5} className="text-black">1.5x</option>
+              </select>
 
               {/* Subtitle Toggle */}
               <button
                 onClick={() => setShowTranscript(!showTranscript)}
-                className={`control-button-compact ${
+                className={`modern-control-btn ${
                   showTranscript
-                    ? 'bg-blue-600 hover:bg-blue-700'
+                    ? 'bg-blue-600 hover:bg-blue-700 shadow-lg'
                     : ''
                 }`}
                 title="Toggle Subtitles"
@@ -825,7 +821,7 @@ export const ESLVideoPlayer = ({
 
               {/* Fullscreen */}
               <button
-                className="control-button-compact"
+                className="modern-control-btn"
                 title="Fullscreen"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
