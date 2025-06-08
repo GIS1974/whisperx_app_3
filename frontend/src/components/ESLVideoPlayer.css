@@ -264,6 +264,133 @@
   background: #94a3b8;
 }
 
+/* Control Panel Styles - Separate from overlay controls */
+.custom-progress-bar-control {
+  width: 100%;
+  padding: 4px 0;
+  position: relative;
+}
+
+.progress-track-control {
+  width: 100%;
+  height: 8px;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.progress-track-control:hover {
+  height: 10px;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.buffered-progress-control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.play-progress-control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 4px;
+  transition: width 0.1s ease;
+}
+
+.progress-handle-control {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border: 3px solid #3b82f6;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.progress-track-control:hover .progress-handle-control {
+  opacity: 1;
+}
+
+/* Control Panel Button Styling */
+.control-button-panel {
+  background: rgba(148, 163, 184, 0.2);
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.control-button-panel:hover {
+  background: rgba(148, 163, 184, 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.control-button-panel:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-button-panel:disabled:hover {
+  background: rgba(148, 163, 184, 0.2);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Special styling for play button in control panel */
+.play-button-panel {
+  background: rgba(59, 130, 246, 0.2);
+  padding: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.play-button-panel:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: scale(1.1);
+}
+
+/* Speed dropdown for control panel */
+.speed-dropdown-panel {
+  background: rgba(148, 163, 184, 0.2);
+  color: white;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  padding: 6px 24px 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: none;
+}
+
+.speed-dropdown-panel:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.speed-dropdown-panel:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .mode-dropdown {
@@ -276,11 +403,24 @@
     font-size: 11px;
   }
 
+  .speed-dropdown-panel {
+    padding: 4px 20px 4px 8px;
+    font-size: 11px;
+  }
+
   .control-button {
     padding: 8px;
   }
 
+  .control-button-panel {
+    padding: 8px;
+  }
+
   .play-button {
+    padding: 10px;
+  }
+
+  .play-button-panel {
     padding: 10px;
   }
 
@@ -293,5 +433,19 @@
   .mode-button {
     padding: 10px 16px;
     font-size: 12px;
+  }
+
+  .progress-track-control {
+    height: 6px;
+  }
+
+  .progress-track-control:hover {
+    height: 8px;
+  }
+
+  .progress-handle-control {
+    width: 14px;
+    height: 14px;
+    right: -7px;
   }
 }

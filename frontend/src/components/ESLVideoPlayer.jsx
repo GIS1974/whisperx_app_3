@@ -520,7 +520,7 @@ export const ESLVideoPlayer = ({
 
   return (
     <div className={`esl-video-player ${className} h-full flex flex-col`}>
-      {/* Main Video Player Container with Modern Styling */}
+      {/* Clean Video Player Container - Only video and subtitles */}
       <div className="relative bg-black rounded-xl overflow-hidden shadow-xl flex-shrink-0">
         <VideoPlayer
           mediaFile={mediaFile}
@@ -529,9 +529,9 @@ export const ESLVideoPlayer = ({
           className="w-full aspect-video"
         />
 
-        {/* Subtitle Overlay - Styled like control panel */}
+        {/* Clean Subtitle Overlay - Only subtitles on video */}
         {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
             <div className="subtitle-overlay">
               <p className="text-lg md:text-xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
                 {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
@@ -539,39 +539,42 @@ export const ESLVideoPlayer = ({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Custom Progress Bar - Above Control Bar */}
-        <div className="absolute bottom-16 left-4 right-4 pointer-events-auto z-20">
-          <div className="custom-progress-bar">
-            <div
-              className="progress-track"
-              onClick={(e) => {
-                if (!playerRef.current || !duration) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const percentage = clickX / rect.width;
-                const newTime = percentage * duration;
-                playerRef.current.currentTime(newTime);
-              }}
-            >
-              {/* Buffered Progress */}
+      {/* Control Panel - Separate section below player */}
+      <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden mt-4 flex-shrink-0">
+        <div className="px-6 py-4">
+          {/* Progress Bar */}
+          <div className="mb-4">
+            <div className="custom-progress-bar-control">
               <div
-                className="buffered-progress"
-                style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}
-              />
-              {/* Play Progress */}
-              <div
-                className="play-progress"
-                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                className="progress-track-control"
+                onClick={(e) => {
+                  if (!playerRef.current || !duration) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const percentage = clickX / rect.width;
+                  const newTime = percentage * duration;
+                  playerRef.current.currentTime(newTime);
+                }}
               >
-                <div className="progress-handle" />
+                {/* Buffered Progress */}
+                <div
+                  className="buffered-progress-control"
+                  style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}
+                />
+                {/* Play Progress */}
+                <div
+                  className="play-progress-control"
+                  style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+                >
+                  <div className="progress-handle-control" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Modern Control Bar - Bottom Overlay - Simplified */}
-        <div className="absolute bottom-0 left-0 right-0 control-bar p-4 pointer-events-auto z-20">
+          {/* Control Row */}
           <div className="flex items-center justify-between">
             {/* Left Side - Navigation Controls */}
             <div className="flex items-center gap-3">
@@ -581,8 +584,8 @@ export const ESLVideoPlayer = ({
                   goToPreviousSegment(e);
                 }}
                 disabled={currentSegment === 0}
-                className="control-button"
-                title="Previous Segment"
+                className="control-button-panel"
+                title="Previous Phrase"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
@@ -592,15 +595,25 @@ export const ESLVideoPlayer = ({
               <button
                 onClick={(e) => {
                   e.preventDefault();
-                  playCurrentSegment();
+                  if (isPlaying) {
+                    playerRef.current?.pause();
+                  } else {
+                    playCurrentSegment();
+                  }
                 }}
-                className="control-button play-button"
-                title="Play Current Segment"
+                className="control-button-panel play-button-panel"
+                title={isPlaying ? "Pause" : "Play"}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                {isPlaying ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
               </button>
 
               <button
@@ -609,28 +622,48 @@ export const ESLVideoPlayer = ({
                   goToNextSegment(e);
                 }}
                 disabled={currentSegment === segments.length - 1}
-                className="control-button"
-                title="Next Segment"
+                className="control-button-panel"
+                title="Next Phrase"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4zM19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
                 </svg>
               </button>
+
+              {/* Volume Control */}
+              <button
+                className="control-button-panel ml-2"
+                title="Volume"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l4-2V7l-4-2z" />
+                </svg>
+              </button>
             </div>
 
             {/* Center - Time Display */}
-            <div className="text-white text-sm font-medium bg-black bg-opacity-50 px-3 py-1 rounded-full">
+            <div className="text-white text-sm font-medium bg-slate-700 px-3 py-1 rounded-lg">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
 
             {/* Right Side - Settings Controls */}
             <div className="flex items-center gap-3">
+              {/* Fullscreen */}
+              <button
+                className="control-button-panel"
+                title="Fullscreen"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
+
               {/* Playback Speed */}
               <div className="relative">
                 <select
                   value={playbackSpeed}
                   onChange={(e) => changeSpeed(parseFloat(e.target.value))}
-                  className="speed-dropdown"
+                  className="speed-dropdown-panel"
                 >
                   <option value={0.5} className="text-black">0.5x</option>
                   <option value={0.75} className="text-black">0.75x</option>
@@ -640,20 +673,10 @@ export const ESLVideoPlayer = ({
                 </select>
               </div>
 
-              {/* Volume Control */}
-              <button
-                className="control-button"
-                title="Volume"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l4-2V7l-4-2z" />
-                </svg>
-              </button>
-
               {/* Subtitle Toggle */}
               <button
                 onClick={() => setShowTranscript(!showTranscript)}
-                className={`control-button ${
+                className={`control-button-panel ${
                   showTranscript
                     ? 'bg-blue-600 hover:bg-blue-700'
                     : ''
@@ -664,22 +687,12 @@ export const ESLVideoPlayer = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
                 </svg>
               </button>
-
-              {/* Fullscreen */}
-              <button
-                className="control-button"
-                title="Fullscreen"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ESL Mode Controls - Below Player */}
+      {/* ESL Mode Controls - Below Control Panel */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-4 flex-shrink-0">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
@@ -689,19 +702,19 @@ export const ESLVideoPlayer = ({
                 onClick={() => setMode('normal')}
                 className={`mode-button ${playbackMode === 'normal' ? 'active' : ''}`}
               >
-                Normal
+                NORMAL
               </button>
               <button
                 onClick={() => setMode('listen')}
                 className={`mode-button ${playbackMode === 'listen' ? 'active' : ''}`}
               >
-                Listen
+                LISTEN
               </button>
               <button
                 onClick={() => setMode('repeat')}
                 className={`mode-button ${playbackMode === 'repeat' ? 'active' : ''}`}
               >
-                Repeat
+                REPEAT
               </button>
             </div>
 
