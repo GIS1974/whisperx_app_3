@@ -790,23 +790,24 @@ const EditableSegment = React.forwardRef(({
         // View mode
         <div
           onClick={() => !isEditMode && onSegmentClick(segment)}
-          className={`group flex items-start space-x-4 p-4 rounded-xl transition-all duration-200 ${
+          className={`group flex items-start space-x-4 p-4 rounded-2xl transition-all duration-200 ${
             !isEditMode
-              ? 'cursor-pointer hover:bg-slate-50 hover:shadow-sm'
+              ? 'cursor-pointer hover:bg-slate-50 hover:shadow-md'
               : ''
           } ${
             isActive
-              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 shadow-sm'
-              : 'hover:border-l-4 hover:border-gray-200'
+              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 shadow-lg'
+              : 'hover:border-l-2 hover:border-gray-300'
           }`}
         >
           <div className="flex flex-col items-center space-y-1 flex-shrink-0">
-            <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded-md">
+            <span className={`text-xs font-mono px-3 py-2 rounded-lg transition-all duration-200 ${
+              isActive
+                ? 'bg-blue-500 text-white font-semibold shadow-md'
+                : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
+            }`}>
               {formatTimestamp(segment.start)}
             </span>
-            {isActive && (
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            )}
           </div>
 
           <div className="flex-1 min-w-0">

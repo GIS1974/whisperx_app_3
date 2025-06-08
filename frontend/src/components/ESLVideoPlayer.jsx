@@ -627,7 +627,7 @@ export const ESLVideoPlayer = ({
   return (
     <div className={`esl-video-player ${className} h-full flex flex-col`}>
       {/* Clean Video Player Container - Only video and subtitles */}
-      <div className="relative bg-black rounded-xl overflow-hidden shadow-xl flex-shrink-0">
+      <div className="relative bg-black rounded-2xl overflow-hidden shadow-xl flex-shrink-0">
         <VideoPlayer
           mediaFile={mediaFile}
           transcription={transcription}
@@ -649,7 +649,7 @@ export const ESLVideoPlayer = ({
       </div>
 
       {/* Control Panel - Separate section below player */}
-      <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden mt-4 flex-shrink-0">
+      <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden mt-6 flex-shrink-0">
         <div className="px-6 py-4">
           {/* Progress Bar */}
           <div className="mb-4">
@@ -794,7 +794,7 @@ export const ESLVideoPlayer = ({
       </div>
 
       {/* ESL Mode Controls - Below Control Panel */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-4 flex-shrink-0">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mt-6 flex-shrink-0">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Left Side - Mode Buttons */}
@@ -828,9 +828,9 @@ export const ESLVideoPlayer = ({
       </div>
 
       {/* Subtitle Section - Clean and Simple */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mt-4 flex-1 subtitle-section">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mt-6 flex-1 subtitle-section">
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-4 py-3 border-b border-gray-100">
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Current Segment</h3>
             <div className="flex items-center gap-4">
@@ -847,7 +847,7 @@ export const ESLVideoPlayer = ({
         <div className="p-6">
           {currentSegmentData ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-100">
+              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
                 <p className="text-xl leading-relaxed text-gray-900 font-medium mb-4">
                   {currentSegmentData.text}
                 </p>
@@ -869,7 +869,7 @@ export const ESLVideoPlayer = ({
 
               {/* Additional Settings for Repeat Mode */}
               {playbackMode === 'repeat' && (
-                <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                <div className="bg-orange-50 rounded-2xl p-4 border border-orange-200">
                   <h4 className="text-sm font-semibold text-orange-900 mb-3">Repeat Mode Settings</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

@@ -63,9 +63,9 @@
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
-/* Enhanced segment hover effects */
+/* Enhanced segment hover effects - Removed unnecessary animation */
 .transcript-panel .group:hover {
-  transform: translateX(2px);
+  /* Removed translateX animation for cleaner UX */
 }
 
 /* Active segment pulse animation */
