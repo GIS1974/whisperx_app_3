@@ -22,11 +22,22 @@ export const ESLVideoPlayer = ({
   const [showTranscript, setShowTranscript] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showWordHighlighting, setShowWordHighlighting] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [buffered, setBuffered] = useState(0);
   const [forceSubtitleDisplay, setForceSubtitleDisplay] = useState(false);
   
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
   const timeUpdateIntervalRef = useRef(null);
+
+  // Helper function to format time in MM:SS format
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Parse transcript segments from transcription data
   useEffect(() => {
@@ -306,6 +317,16 @@ export const ESLVideoPlayer = ({
     });
     player.on('ended', handleVideoEnd);
 
+    // Track progress for custom progress bar
+    player.on('timeupdate', () => {
+      setCurrentTime(player.currentTime());
+      setDuration(player.duration());
+
+      // Update buffered progress
+      const bufferedEnd = player.buffered().length > 0 ? player.buffered().end(0) : 0;
+      setBuffered(bufferedEnd);
+    });
+
     // Initialize subtitle display immediately
     setTimeout(() => {
       initializeSubtitleDisplay();
@@ -519,6 +540,36 @@ export const ESLVideoPlayer = ({
           </div>
         )}
 
+        {/* Custom Progress Bar - Above Control Bar */}
+        <div className="absolute bottom-16 left-4 right-4 pointer-events-auto">
+          <div className="custom-progress-bar">
+            <div
+              className="progress-track"
+              onClick={(e) => {
+                if (!playerRef.current || !duration) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const percentage = clickX / rect.width;
+                const newTime = percentage * duration;
+                playerRef.current.currentTime(newTime);
+              }}
+            >
+              {/* Buffered Progress */}
+              <div
+                className="buffered-progress"
+                style={{ width: `${duration ? (buffered / duration) * 100 : 0}%` }}
+              />
+              {/* Play Progress */}
+              <div
+                className="play-progress"
+                style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+              >
+                <div className="progress-handle" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Modern Control Bar - Bottom Overlay - Simplified */}
         <div className="absolute bottom-0 left-0 right-0 control-bar p-4 pointer-events-auto">
           <div className="flex items-center justify-between">
@@ -569,7 +620,7 @@ export const ESLVideoPlayer = ({
 
             {/* Center - Time Display */}
             <div className="text-white text-sm font-medium bg-black bg-opacity-50 px-3 py-1 rounded-full">
-              17:34 / 59:32
+              {formatTime(currentTime)} / {formatTime(duration)}
             </div>
 
             {/* Right Side - Settings Controls */}

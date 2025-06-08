@@ -107,16 +107,116 @@
   height: 4rem;
 }
 
+/* Progress Bar Styling - Complete Implementation */
 .video-js .vjs-progress-control {
-  height: 0.5rem;
+  height: 8px !important;
+  position: relative;
+  margin: 0 8px;
+}
+
+.video-js .vjs-progress-holder {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+  height: 8px !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.video-js .vjs-progress-control:hover .vjs-progress-holder {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scaleY(1.2);
+}
+
+.video-js .vjs-load-progress {
+  background: rgba(255, 255, 255, 0.4) !important;
+  border-radius: 4px !important;
 }
 
 .video-js .vjs-play-progress {
-  background-color: #2563eb;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8) !important;
+  border-radius: 4px !important;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.video-js .vjs-play-progress::before {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.video-js .vjs-progress-control:hover .vjs-play-progress::before {
+  opacity: 1;
+}
+
+.video-js .vjs-mouse-display {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 4px !important;
+}
+
+/* Volume Control Styling */
+.video-js .vjs-volume-control {
+  width: 5em;
+}
+
+.video-js .vjs-volume-bar {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 2px !important;
+  height: 4px !important;
 }
 
 .video-js .vjs-volume-level {
-  background-color: #2563eb;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8) !important;
+  border-radius: 2px !important;
+  height: 4px !important;
+}
+
+/* Control Bar Button Styling */
+.video-js .vjs-control-bar .vjs-button {
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.video-js .vjs-control-bar .vjs-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Time Display Styling */
+.video-js .vjs-time-control {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Fullscreen Button */
+.video-js .vjs-fullscreen-control {
+  order: 10;
+}
+
+/* Hide Video.js control bar since we have custom overlay */
+.esl-video-player .video-js .vjs-control-bar {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Keep progress bar visible but hide other controls */
+.esl-video-player .video-js .vjs-progress-control {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* Custom subtitle styling */
