@@ -23,13 +23,13 @@ export const ESLVideoPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
-  const [forceSubtitleDisplay, setForceSubtitleDisplay] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const playerRef = useRef(null);
   const segmentTimeoutRef = useRef(null);
   const timeUpdateIntervalRef = useRef(null);
   const progressBarRef = useRef(null);
+  const segmentChangeTimeoutRef = useRef(null);
 
   // Helper function to format time in MM:SS format
   const formatTime = (seconds) => {
@@ -65,11 +65,11 @@ export const ESLVideoPlayer = ({
 
   // Sync with external segment selection
   useEffect(() => {
-    if (selectedSegmentIndex !== null && selectedSegmentIndex !== currentSegment) {
+    if (selectedSegmentIndex !== null && selectedSegmentIndex !== currentSegment && selectedSegmentIndex >= 0 && selectedSegmentIndex < segments.length) {
       setCurrentSegment(selectedSegmentIndex);
       // Don't auto-play here since it will be triggered by the parent
     }
-  }, [selectedSegmentIndex]);
+  }, [selectedSegmentIndex, segments.length]);
 
   // Calculate precise timing for segment playback using word-level data
   const calculatePreciseTiming = useCallback((segment) => {
@@ -176,16 +176,24 @@ export const ESLVideoPlayer = ({
       }
     }
 
-    // Update current segment if it has changed
+    // Update current segment if it has changed (with debounce to prevent rapid switching)
     if (segmentToShow !== -1 && segmentToShow !== currentSegment) {
-      console.log('Changing segment from', currentSegment, 'to', segmentToShow, segments[segmentToShow]?.text);
-      setCurrentSegment(segmentToShow);
-      if (onProgress) {
-        onProgress(segmentToShow, segments[segmentToShow]);
+      // Clear any pending segment change
+      if (segmentChangeTimeoutRef.current) {
+        clearTimeout(segmentChangeTimeoutRef.current);
       }
-      if (onSegmentChange) {
-        onSegmentChange(segmentToShow, segments[segmentToShow]);
-      }
+
+      // Debounce segment changes to prevent rapid switching
+      segmentChangeTimeoutRef.current = setTimeout(() => {
+        console.log('Changing segment from', currentSegment, 'to', segmentToShow, segments[segmentToShow]?.text);
+        setCurrentSegment(segmentToShow);
+        if (onProgress) {
+          onProgress(segmentToShow, segments[segmentToShow]);
+        }
+        if (onSegmentChange) {
+          onSegmentChange(segmentToShow, segments[segmentToShow]);
+        }
+      }, 100); // 100ms debounce
     }
   }, [segments, currentSegment, onProgress, onSegmentChange]);
 
@@ -212,17 +220,16 @@ export const ESLVideoPlayer = ({
     }
 
     console.log('Initialized subtitle display:', segmentToShow, segments[segmentToShow]?.text);
-  }, [segments, currentSegment, onProgress, onSegmentChange, handleTimeUpdate]);
+  }, [segments, currentSegment, onProgress, onSegmentChange]);
 
   // Initialize subtitle display when segments are loaded
   useEffect(() => {
     if (segments.length > 0) {
-      // Force subtitle display when segments become available
-      setForceSubtitleDisplay(true);
       if (playerRef.current) {
+        // Initialize subtitle display after a short delay
         setTimeout(() => {
           initializeSubtitleDisplay();
-        }, 100);
+        }, 200);
       }
 
       // Start polling for time updates to ensure subtitles update
@@ -294,6 +301,9 @@ export const ESLVideoPlayer = ({
       if (segmentTimeoutRef.current) {
         clearTimeout(segmentTimeoutRef.current);
       }
+      if (segmentChangeTimeoutRef.current) {
+        clearTimeout(segmentChangeTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -327,10 +337,12 @@ export const ESLVideoPlayer = ({
       setBuffered(bufferedEnd);
     });
 
-    // Initialize subtitle display immediately
+    // Initialize subtitle display after player is ready
     setTimeout(() => {
-      initializeSubtitleDisplay();
-    }, 100);
+      if (segments.length > 0) {
+        initializeSubtitleDisplay();
+      }
+    }, 300);
   };
 
 
@@ -632,11 +644,11 @@ export const ESLVideoPlayer = ({
         />
 
         {/* Clean Subtitle Overlay - Only subtitles on video */}
-        {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
+        {showTranscript && segments.length > 0 && currentSegmentData && (
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
             <div className="subtitle-overlay bg-black bg-opacity-60 rounded-lg px-4 py-2">
               <p className="text-lg md:text-xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap text-center">
-                {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
+                {currentSegmentData.text}
               </p>
             </div>
           </div>

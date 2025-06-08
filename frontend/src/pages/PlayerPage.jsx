@@ -7,7 +7,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ESLVideoPlayer } from '../components/ESLVideoPlayer';
 import { TranscriptPanel } from '../components/TranscriptPanel';
 
-export const PlayerPage = () => {
+export const PlayerPage = ({ onPlayerPageInfoChange }) => {
   const { fileId } = useParams();
   const navigate = useNavigate();
 
@@ -28,6 +28,13 @@ export const PlayerPage = () => {
 
   useEffect(() => {
     fetchMediaFile();
+
+    // Cleanup navbar info when component unmounts
+    return () => {
+      if (onPlayerPageInfoChange) {
+        onPlayerPageInfoChange(null);
+      }
+    };
   }, [fileId]);
 
   useEffect(() => {
@@ -41,6 +48,11 @@ export const PlayerPage = () => {
       setLoading(true);
       const file = await mediaAPI.getMediaFile(fileId);
       setMediaFile(file);
+
+      // Update navbar with file info
+      if (onPlayerPageInfoChange) {
+        onPlayerPageInfoChange(file);
+      }
 
       if (!file.is_completed && !file.has_failed) {
         // Start polling for completion
@@ -149,46 +161,6 @@ export const PlayerPage = () => {
     setCurrentSegment(segment);
   };
 
-  // Helper functions for status display
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-      case 'transcribing':
-      case 'transcribing_chunked':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'failed':
-      case 'failed_transcription':
-        return 'bg-red-100 text-red-800';
-      case 'uploaded':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'Completed';
-      case 'processing':
-        return 'Processing';
-      case 'transcribing':
-        return 'Transcribing';
-      case 'transcribing_chunked':
-        return 'Transcribing (Large File)';
-      case 'failed':
-        return 'Failed';
-      case 'failed_transcription':
-        return 'Transcription Failed';
-      case 'uploaded':
-        return 'Uploaded';
-      default:
-        return status;
-    }
-  };
-
   if (loading) {
     return <LoadingSpinner text="Loading media file..." />;
   }
@@ -223,38 +195,8 @@ export const PlayerPage = () => {
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Compact File Info Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-            <div className="border-l border-gray-300 h-5"></div>
-            <div className="flex items-center space-x-4">
-              <h1 className="text-lg font-bold text-gray-900">{mediaFile.filename_original}</h1>
-              <div className="flex items-center space-x-3 text-sm text-gray-500">
-                <span className="capitalize">{mediaFile.file_type}</span>
-                <span>•</span>
-                <span>{mediaFile.language_transcription?.toUpperCase()}</span>
-                <span>•</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(mediaFile.status)}`}>
-                  {getStatusText(mediaFile.status)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area - Fixed height */}
-      <div className="flex-1 overflow-hidden">
+      {/* Main Content Area - Full height */}
+      <div className="h-full overflow-hidden">
         {/* Processing Status */}
         {mediaFile.is_processing && (
           <div className="h-full flex items-center justify-center">

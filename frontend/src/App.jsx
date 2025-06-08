@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/esl-player.css';
+import { useState } from 'react';
 
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -17,11 +18,13 @@ import { TestPlayerPage } from './pages/TestPlayerPage';
 import { BasicVideoTest } from './components/BasicVideoTest';
 
 function App() {
+  const [playerPageInfo, setPlayerPageInfo] = useState(null);
+
   return (
     <AuthProvider>
       <Router>
         <div className="h-screen bg-gray-50 flex flex-col">
-          <Navbar />
+          <Navbar playerPageInfo={playerPageInfo} />
 
           <main className="flex-1 w-full overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
             <Routes>
@@ -32,7 +35,7 @@ function App() {
               {/* Temporarily unprotected routes for testing */}
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/upload" element={<UploadPage />} />
-              <Route path="/player/:fileId" element={<PlayerPage />} />
+              <Route path="/player/:fileId" element={<PlayerPage onPlayerPageInfoChange={setPlayerPageInfo} />} />
               <Route path="/test-player" element={<TestPlayerPage />} />
               <Route path="/basic-video-test" element={<BasicVideoTest />} />
 
