@@ -264,7 +264,7 @@ export const ESLVideoPlayer = ({
       switch (event.code) {
         case 'Space':
           event.preventDefault();
-          playCurrentSegment();
+          togglePlayPause();
           break;
         case 'ArrowLeft':
           event.preventDefault();
@@ -409,6 +409,44 @@ export const ESLVideoPlayer = ({
     playSegment(currentSegment);
   };
 
+  // Normal video playback functions
+  const playVideo = () => {
+    if (playerRef.current) {
+      playerRef.current.play();
+    }
+  };
+
+  const pauseVideo = () => {
+    if (playerRef.current) {
+      playerRef.current.pause();
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (!playerRef.current) return;
+
+    if (playbackMode === 'normal') {
+      // Normal video playback - toggle play/pause
+      if (isPlaying) {
+        pauseVideo();
+      } else {
+        playVideo();
+      }
+    } else {
+      // ESL modes - use segment-based playback
+      if (isPlaying) {
+        pauseVideo();
+      } else {
+        playCurrentSegment();
+      }
+    }
+  };
+
+  // Handle video area click for play/pause
+  const handleVideoClick = () => {
+    togglePlayPause();
+  };
+
   // Navigate to segment start position with enhanced timing (no auto-play)
   const navigateToSegmentStart = (segmentIndex) => {
     if (!playerRef.current || segments.length === 0) return;
@@ -526,6 +564,7 @@ export const ESLVideoPlayer = ({
           mediaFile={mediaFile}
           transcription={transcription}
           onReady={handlePlayerReady}
+          onVideoClick={handleVideoClick}
           className="w-full aspect-video"
         />
 
@@ -595,11 +634,7 @@ export const ESLVideoPlayer = ({
               <button
                 onClick={(e) => {
                   e.preventDefault();
-                  if (isPlaying) {
-                    playerRef.current?.pause();
-                  } else {
-                    playCurrentSegment();
-                  }
+                  togglePlayPause();
                 }}
                 className="control-button-panel play-button-panel"
                 title={isPlaying ? "Pause" : "Play"}

@@ -8,6 +8,7 @@ export const VideoPlayer = ({
   subtitles = [],
   onReady,
   onTimeUpdate,
+  onVideoClick,
   className = '',
   mediaFile = null,
   transcription = null
@@ -325,6 +326,7 @@ export const VideoPlayer = ({
           className="video-js vjs-default-skin w-full h-full"
           preload="auto"
           data-setup="{}"
+          onClick={onVideoClick}
         >
           <p className="vjs-no-js">
             To view this video, please enable JavaScript, and consider upgrading to a web browser that
