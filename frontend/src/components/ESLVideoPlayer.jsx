@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { VideoPlayer } from './VideoPlayer';
-import { WordHighlighter } from './WordHighlighter';
 import './ESLVideoPlayer.css';
 
 export const ESLVideoPlayer = ({
@@ -18,10 +17,9 @@ export const ESLVideoPlayer = ({
   const [playbackMode, setPlaybackMode] = useState('normal'); // 'normal', 'listen', 'repeat'
   const [segments, setSegments] = useState([]);
   const [repeatCount, setRepeatCount] = useState(0);
-  const [maxRepeats, setMaxRepeats] = useState(3);
+  const [maxRepeats] = useState(3);
   const [showTranscript, setShowTranscript] = useState(true);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [showWordHighlighting, setShowWordHighlighting] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
@@ -144,7 +142,7 @@ export const ESLVideoPlayer = ({
     console.log('Time update:', currentTime.toFixed(2), 'Current segment:', currentSegment);
 
     // Find the segment that contains the current time using enhanced timing boundaries
-    const activeSegment = segments.findIndex((segment, index) => {
+    const activeSegment = segments.findIndex((segment) => {
       const timing = calculatePreciseTiming(segment);
       return currentTime >= timing.startTime && currentTime <= timing.endTime;
     });
@@ -538,9 +536,6 @@ export const ESLVideoPlayer = ({
   const goToSegment = (segmentIndex) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
 
-    // Prevent page scrolling during navigation
-    event?.preventDefault?.();
-
     setCurrentSegment(segmentIndex);
     setRepeatCount(0);
 
@@ -576,13 +571,13 @@ export const ESLVideoPlayer = ({
   };
 
   // Navigation controls
-  const goToPreviousSegment = (event) => {
-    event?.preventDefault?.();
+  const goToPreviousSegment = (e) => {
+    e?.preventDefault?.();
     goToSegment(currentSegment - 1);
   };
 
-  const goToNextSegment = (event) => {
-    event?.preventDefault?.();
+  const goToNextSegment = (e) => {
+    e?.preventDefault?.();
     goToSegment(currentSegment + 1);
   };
 
@@ -614,12 +609,12 @@ export const ESLVideoPlayer = ({
         goToSegment: (segmentIndex) => {
           goToSegment(segmentIndex);
         },
-        // Expose player reference and word highlighting state for TranscriptPanel
+        // Expose player reference for TranscriptPanel
         playerRef: playerRef,
-        showWordHighlighting: showWordHighlighting
+        showWordHighlighting: false
       });
     }
-  }, [segments, onPlayerReady, showWordHighlighting]);
+  }, [segments, onPlayerReady]);
 
   // Get current segment data with fallback
   const currentSegmentData = segments[currentSegment] || (segments.length > 0 ? segments[0] : null);
@@ -627,20 +622,20 @@ export const ESLVideoPlayer = ({
   return (
     <div className={`esl-video-player ${className} h-full flex flex-col`}>
       {/* Clean Video Player Container - Only video and subtitles */}
-      <div className="relative bg-black rounded-2xl overflow-hidden shadow-xl flex-shrink-0">
+      <div className="relative bg-black rounded-2xl overflow-hidden shadow-xl flex-shrink-0" style={{ height: '70%' }}>
         <VideoPlayer
           mediaFile={mediaFile}
           transcription={transcription}
           onReady={handlePlayerReady}
           onVideoClick={handleVideoClick}
-          className="w-full aspect-video"
+          className="w-full h-full"
         />
 
         {/* Clean Subtitle Overlay - Only subtitles on video */}
         {showTranscript && segments.length > 0 && (forceSubtitleDisplay || currentSegmentData) && (
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl px-6 pointer-events-none">
-            <div className="subtitle-overlay">
-              <p className="text-lg md:text-xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap drop-shadow-lg">
+            <div className="subtitle-overlay bg-black bg-opacity-60 rounded-lg px-4 py-2">
+              <p className="text-lg md:text-xl leading-relaxed text-white font-medium tracking-wide break-words whitespace-pre-wrap text-center">
                 {currentSegmentData?.text || segments[0]?.text || 'Loading subtitles...'}
               </p>
             </div>
@@ -649,10 +644,10 @@ export const ESLVideoPlayer = ({
       </div>
 
       {/* Control Panel - Separate section below player */}
-      <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden mt-6 flex-shrink-0">
-        <div className="px-6 py-4">
+      <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 overflow-hidden mt-3 flex-shrink-0" style={{ height: '100px' }}>
+        <div className="px-6 py-3">
           {/* Progress Bar */}
-          <div className="mb-4">
+          <div className="mb-3">
             <div className="custom-progress-bar-control">
               <div
                 ref={progressBarRef}
@@ -794,112 +789,48 @@ export const ESLVideoPlayer = ({
       </div>
 
       {/* ESL Mode Controls - Below Control Panel */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mt-6 flex-shrink-0">
-        <div className="px-6 py-4">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mt-3 flex-shrink-0" style={{ height: '60px' }}>
+        <div className="px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Left Side - Mode Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setMode('normal')}
-                className={`mode-button ${playbackMode === 'normal' ? 'active' : ''}`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  playbackMode === 'normal'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
                 NORMAL
               </button>
               <button
                 onClick={() => setMode('listen')}
-                className={`mode-button ${playbackMode === 'listen' ? 'active' : ''}`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  playbackMode === 'listen'
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
                 LISTEN
               </button>
               <button
                 onClick={() => setMode('repeat')}
-                className={`mode-button ${playbackMode === 'repeat' ? 'active' : ''}`}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  playbackMode === 'repeat'
+                    ? 'bg-orange-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
                 REPEAT
               </button>
             </div>
 
             {/* Right Side - Segment Counter */}
-            <div className="text-gray-600 text-sm font-medium">
+            <div className="text-gray-600 text-sm font-medium bg-gray-100 px-3 py-1 rounded-lg">
               Segment {currentSegment + 1} of {segments.length}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Subtitle Section - Clean and Simple */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mt-6 flex-1 subtitle-section">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900">Current Segment</h3>
-            <div className="flex items-center gap-4">
-              {playbackMode === 'repeat' && (
-                <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                  Repeat {repeatCount + 1}/{maxRepeats}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Current Segment Content */}
-        <div className="p-6">
-          {currentSegmentData ? (
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
-                <p className="text-xl leading-relaxed text-gray-900 font-medium mb-4">
-                  {currentSegmentData.text}
-                </p>
-                <div className="flex items-center gap-6 text-sm text-gray-600">
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Duration: {currentSegmentData.duration.toFixed(1)}s
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
-                    </svg>
-                    Time: {Math.floor(currentSegmentData.start / 60)}:{Math.floor(currentSegmentData.start % 60).toString().padStart(2, '0')} - {Math.floor(currentSegmentData.end / 60)}:{Math.floor(currentSegmentData.end % 60).toString().padStart(2, '0')}
-                  </span>
-                </div>
-              </div>
-
-              {/* Additional Settings for Repeat Mode */}
-              {playbackMode === 'repeat' && (
-                <div className="bg-orange-50 rounded-2xl p-4 border border-orange-200">
-                  <h4 className="text-sm font-semibold text-orange-900 mb-3">Repeat Mode Settings</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-orange-800 mb-2 block">Max Repeats</label>
-                      <select
-                        value={maxRepeats}
-                        onChange={(e) => setMaxRepeats(parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
-                      >
-                        <option value={1}>1 time</option>
-                        <option value={2}>2 times</option>
-                        <option value={3}>3 times</option>
-                        <option value={5}>5 times</option>
-                        <option value={10}>10 times</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="text-gray-400 mb-2">
-                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2" />
-                </svg>
-              </div>
-              <p className="text-gray-500">No segment selected</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

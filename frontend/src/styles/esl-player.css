@@ -8,9 +8,26 @@
 }
 
 .esl-video-player .video-js {
-  /* Ensure Video.js player takes full width */
+  /* Ensure Video.js player takes full width and height */
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+/* Video player container with proper aspect ratio handling */
+.video-player-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.video-player-container .video-js .vjs-tech {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
 }
 
 /* Focus styles for accessibility */
@@ -346,4 +363,60 @@ button:focus {
   0% { transform: scale(1); }
   50% { transform: scale(1.08); }
   100% { transform: scale(1); }
+}
+
+/* Control Panel Styles */
+.control-button-panel {
+  @apply bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg transition-colors duration-200 flex items-center justify-center;
+  min-width: 40px;
+  height: 40px;
+}
+
+.control-button-panel.play-button-panel {
+  @apply bg-blue-600 hover:bg-blue-700;
+  min-width: 48px;
+  height: 48px;
+}
+
+.speed-dropdown-panel {
+  @apply bg-slate-700 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.custom-progress-bar-control {
+  @apply w-full h-2 bg-slate-600 rounded-full cursor-pointer relative;
+}
+
+.progress-track-control {
+  @apply w-full h-full bg-slate-600 rounded-full relative overflow-hidden;
+}
+
+.buffered-progress-control {
+  @apply absolute top-0 left-0 h-full bg-slate-500 rounded-full;
+}
+
+.play-progress-control {
+  @apply absolute top-0 left-0 h-full bg-blue-500 rounded-full;
+}
+
+.progress-handle-control {
+  @apply absolute top-1/2 right-0 w-4 h-4 bg-white rounded-full shadow-lg transform -translate-y-1/2 translate-x-1/2 cursor-pointer;
+  transition: all 0.2s ease;
+}
+
+.progress-handle-control:hover,
+.progress-handle-control.dragging {
+  @apply w-5 h-5 bg-blue-200;
+}
+
+/* Mode Button Styles */
+.mode-button {
+  @apply px-6 py-2 rounded-lg font-semibold transition-all duration-200 border-2;
+}
+
+.mode-button:not(.active) {
+  @apply bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200;
+}
+
+.mode-button.active {
+  @apply bg-blue-600 text-white border-blue-600 shadow-lg;
 }

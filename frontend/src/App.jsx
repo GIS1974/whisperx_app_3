@@ -20,10 +20,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+        <div className="h-screen bg-gray-50 flex flex-col">
           <Navbar />
 
-          <main className="flex-1 w-full overflow-hidden">
+          <main className="flex-1 w-full overflow-hidden" style={{ height: 'calc(100vh - 64px)' }}>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />

@@ -222,23 +222,23 @@ export const PlayerPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Header - Fixed height */}
-      <div className="bg-white shadow-sm border-b border-gray-200 p-4 flex-shrink-0">
-        <div className="flex justify-between items-center">
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Compact File Info Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
+              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200 font-medium"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back
             </button>
-            <div className="border-l border-gray-300 h-6"></div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{mediaFile.filename_original}</h1>
+            <div className="border-l border-gray-300 h-5"></div>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-lg font-bold text-gray-900">{mediaFile.filename_original}</h1>
               <div className="flex items-center space-x-3 text-sm text-gray-500">
                 <span className="capitalize">{mediaFile.file_type}</span>
                 <span>•</span>
@@ -284,11 +284,11 @@ export const PlayerPage = () => {
 
         {/* ESL Video Player - Fixed Layout */}
         {mediaFile.is_completed && (
-          <div className="h-full flex">
-            {/* Video Player Column - Takes 2/3 width */}
-            <div className="flex-1 lg:w-2/3 flex flex-col overflow-hidden">
+          <div className="h-full flex gap-6 p-6">
+            {/* Video Player Column - Takes 70% width */}
+            <div className="w-[70%] flex flex-col overflow-hidden">
               {/* ESL Video Player with integrated controls */}
-              <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-hidden">
                 <ESLVideoPlayer
                   mediaFile={mediaFile}
                   transcription={transcription}
@@ -306,107 +306,108 @@ export const PlayerPage = () => {
                   className="w-full h-full"
                 />
               </div>
-
             </div>
 
-            {/* Transcript Panel Column - Fixed width */}
-            <div className="w-1/3 border-l border-gray-200 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Focus Mode</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={focusMode}
-                        onChange={(e) => setFocusMode(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
+            {/* Transcript Panel Column - Takes 30% width */}
+            <div className="w-[30%] flex flex-col overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 h-full flex flex-col overflow-hidden">
+                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">Interactive Transcript</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-700">Focus Mode</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={focusMode}
+                          onChange={(e) => setFocusMode(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-600">
+                      {focusMode
+                        ? "Auto-scroll disabled"
+                        : "Click segments to jump"
+                      }
+                    </p>
+                    {/* Download Options - Compact */}
+                    {transcription && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => downloadSubtitle('vtt')}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          title="Download VTT"
+                        >
+                          VTT
+                        </button>
+                        <button
+                          onClick={() => downloadSubtitle('srt')}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          title="Download SRT"
+                        >
+                          SRT
+                        </button>
+                        <button
+                          onClick={() => downloadSubtitle('txt')}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          title="Download TXT"
+                        >
+                          TXT
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
-                    {focusMode
-                      ? "Auto-scroll disabled"
-                      : "Click segments to jump"
-                    }
-                  </p>
-                  {/* Download Options - Compact */}
-                  {transcription && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => downloadSubtitle('vtt')}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                        title="Download VTT"
-                      >
-                        VTT
-                      </button>
-                      <button
-                        onClick={() => downloadSubtitle('srt')}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                        title="Download SRT"
-                      >
-                        SRT
-                      </button>
-                      <button
-                        onClick={() => downloadSubtitle('txt')}
-                        className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                        title="Download TXT"
-                      >
-                        TXT
-                      </button>
+
+                <div className="flex-1 overflow-hidden">
+                  {transcription ? (
+                    <TranscriptPanel
+                      segments={segments}
+                      activeSegmentIndex={activeSegmentIndex}
+                      currentTime={currentTime}
+                      onSegmentClick={handleSegmentClick}
+                      onWordClick={(time, word) => {
+                        // Find the segment containing this word and select it
+                        const segmentIndex = segments.findIndex(segment =>
+                          time >= segment.start && time <= segment.end
+                        );
+
+                        if (segmentIndex !== -1) {
+                          const segment = segments[segmentIndex];
+                          setActiveSegmentIndex(segmentIndex);
+                          setCurrentSegment(segment);
+
+                          // Trigger playback through ESLVideoPlayer
+                          if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
+                            eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                          }
+                        }
+                      }}
+                      showSearch={true}
+                      showStats={true}
+                      mediaFileId={mediaFile.id}
+                      transcriptionId={transcription.id}
+                      onTranscriptionUpdate={fetchTranscription}
+                      focusMode={focusMode}
+                      // Word highlighting props - disabled for now
+                      playerRef={eslVideoPlayerAPI?.playerRef}
+                      transcription={transcription}
+                      showWordHighlighting={false}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full p-8">
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Transcript</h3>
+                        <p className="text-gray-500">Transcript will appear here once transcription data is loaded.</p>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="flex-1 overflow-hidden">
-                {transcription ? (
-                  <TranscriptPanel
-                    segments={segments}
-                    activeSegmentIndex={activeSegmentIndex}
-                    currentTime={currentTime}
-                    onSegmentClick={handleSegmentClick}
-                    onWordClick={(time, word) => {
-                      // Find the segment containing this word and select it
-                      const segmentIndex = segments.findIndex(segment =>
-                        time >= segment.start && time <= segment.end
-                      );
-
-                      if (segmentIndex !== -1) {
-                        const segment = segments[segmentIndex];
-                        setActiveSegmentIndex(segmentIndex);
-                        setCurrentSegment(segment);
-
-                        // Trigger playback through ESLVideoPlayer
-                        if (eslVideoPlayerAPI && eslVideoPlayerAPI.playSegmentByIndex) {
-                          eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
-                        }
-                      }
-                    }}
-                    showSearch={true}
-                    showStats={true}
-                    mediaFileId={mediaFile.id}
-                    transcriptionId={transcription.id}
-                    onTranscriptionUpdate={fetchTranscription}
-                    focusMode={focusMode}
-                    // Word highlighting props - disabled for now
-                    playerRef={eslVideoPlayerAPI?.playerRef}
-                    transcription={transcription}
-                    showWordHighlighting={false}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full p-8">
-                    <div className="text-center">
-                      <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Transcript</h3>
-                      <p className="text-gray-500">Transcript will appear here once transcription data is loaded.</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

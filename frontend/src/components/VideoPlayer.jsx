@@ -298,7 +298,7 @@ export const VideoPlayer = ({
   const getPlayerContent = () => {
     // Always render the video element to avoid Video.js initialization issues
     return (
-      <div className="video-player-container min-h-[400px] relative">
+      <div className="video-player-container h-full relative">
         {/* Show loading overlay for media file */}
         {!mediaFile && (
           <div className="absolute inset-0 bg-gray-900 rounded-lg overflow-hidden p-8 text-center flex items-center justify-center z-10">
