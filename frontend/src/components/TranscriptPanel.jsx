@@ -54,7 +54,8 @@ export const TranscriptPanel = ({
     }
   }, [segments, hasUnsavedChanges, editedSegments.length]);
 
-  // Update filtered segments when segments, search term, or focus mode changes
+  // Update filtered segments when segments, search term changes
+  // Note: Focus mode no longer filters segments - it only affects scrolling behavior
   useEffect(() => {
     // Always use the most recent segments data
     // If we have editedSegments and they're not empty, use those
@@ -68,17 +69,10 @@ export const TranscriptPanel = ({
 
     let filtered = sourceSegments;
 
-    // Apply focus mode filter first (show only active segment and nearby ones)
-    if (focusMode && activeSegmentIndex >= 0) {
-      const focusRange = 3; // Show 3 segments before and after active segment
-      const startIndex = Math.max(0, activeSegmentIndex - focusRange);
-      const endIndex = Math.min(sourceSegments.length - 1, activeSegmentIndex + focusRange);
+    // Focus mode no longer filters segments - show all segments for scrolling
+    // Focus mode only affects auto-scrolling behavior to keep current phrase visible
 
-      filtered = sourceSegments.slice(startIndex, endIndex + 1);
-    }
-    // When focus mode is off, show all segments (free scrolling)
-
-    // Then apply search filter
+    // Apply search filter
     if (searchTerm.trim()) {
       filtered = filtered.filter(segment =>
         segment.text.toLowerCase().includes(searchTerm.toLowerCase())
@@ -86,7 +80,7 @@ export const TranscriptPanel = ({
     }
 
     setFilteredSegments(filtered);
-  }, [segments, editedSegments, searchTerm, focusMode, activeSegmentIndex]);
+  }, [segments, editedSegments, searchTerm]);
 
   // Word highlighting helper functions (defined before useEffects that use them)
   const parseWordLevelVTT = useCallback((vttText) => {
@@ -171,20 +165,34 @@ export const TranscriptPanel = ({
 
   // Auto-scroll to active segment (only when focus mode is enabled)
   useEffect(() => {
-    // Only auto-scroll when focus mode is enabled
-    if (focusMode && activeSegmentRef.current) {
+    // Only auto-scroll when focus mode is enabled and we have an active segment
+    if (focusMode && activeSegmentIndex >= 0 && activeSegmentRef.current) {
       // Find the transcript panel container
       const transcriptPanel = activeSegmentRef.current.closest('.transcript-panel');
       if (transcriptPanel) {
-        // Scroll within the transcript panel only
+        // Get the position of the active segment relative to the transcript panel
         const elementTop = activeSegmentRef.current.offsetTop;
+        const elementHeight = activeSegmentRef.current.offsetHeight;
         const panelHeight = transcriptPanel.clientHeight;
-        const scrollTop = elementTop - (panelHeight / 2);
+        const currentScrollTop = transcriptPanel.scrollTop;
 
-        transcriptPanel.scrollTo({
-          top: Math.max(0, scrollTop),
-          behavior: 'smooth'
-        });
+        // Calculate if the element is visible in the current viewport
+        const elementBottom = elementTop + elementHeight;
+        const viewportTop = currentScrollTop;
+        const viewportBottom = currentScrollTop + panelHeight;
+
+        // Only scroll if the element is not fully visible
+        const isFullyVisible = elementTop >= viewportTop && elementBottom <= viewportBottom;
+
+        if (!isFullyVisible) {
+          // Center the active segment in the viewport
+          const scrollTop = elementTop - (panelHeight / 2) + (elementHeight / 2);
+
+          transcriptPanel.scrollTo({
+            top: Math.max(0, scrollTop),
+            behavior: 'smooth'
+          });
+        }
       }
     }
   }, [activeSegmentIndex, focusMode]);
