@@ -136,6 +136,12 @@ export const ESLVideoPlayer = ({
   const handleTimeUpdate = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
 
+    // In repeat mode, don't automatically change segments based on time
+    // This prevents unwanted segment switching when user is focused on one segment
+    if (playbackMode === 'repeat') {
+      return;
+    }
+
     const currentTime = playerRef.current.currentTime();
     console.log('Time update:', currentTime.toFixed(2), 'Current segment:', currentSegment);
 
@@ -193,7 +199,7 @@ export const ESLVideoPlayer = ({
         }
       }, 100); // 100ms debounce
     }
-  }, [segments, currentSegment, onProgress, onSegmentChange]);
+  }, [segments, currentSegment, onProgress, onSegmentChange, playbackMode]);
 
   // Initialize subtitle display based on current video time
   const initializeSubtitleDisplay = useCallback(() => {
