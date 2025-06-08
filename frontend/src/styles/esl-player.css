@@ -122,6 +122,16 @@
   scroll-margin-top: 1rem;
 }
 
+/* Ensure transcript segments have proper scroll margin for focus mode */
+.transcript-segment {
+  scroll-margin-top: 150px; /* Increased to account for header height in focus mode */
+}
+
+/* Active segment should have higher scroll margin to ensure visibility */
+.transcript-segment.active {
+  scroll-margin-top: 180px; /* Extra margin for active segments */
+}
+
 /* Focus mode styling */
 .focus-mode .transcript-panel {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);

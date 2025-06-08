@@ -199,7 +199,7 @@ export const ESLVideoPlayer = ({
         if (onSegmentChange) {
           onSegmentChange(segmentToShow, segments[segmentToShow]);
         }
-      }, 100); // 100ms debounce
+      }, 250); // Increased debounce to 250ms to reduce rapid changes
     }
   }, [segments, currentSegment, onProgress, onSegmentChange, playbackMode]);
 

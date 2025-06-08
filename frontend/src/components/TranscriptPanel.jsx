@@ -23,6 +23,8 @@ export const TranscriptPanel = ({
   showWordHighlighting = false
 }) => {
   const activeSegmentRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
+  const lastScrolledSegmentRef = useRef(-1);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredSegments, setFilteredSegments] = useState(segments || []);
 
@@ -167,33 +169,69 @@ export const TranscriptPanel = ({
   useEffect(() => {
     // Only auto-scroll when focus mode is enabled and we have an active segment
     if (focusMode && activeSegmentIndex >= 0 && activeSegmentRef.current) {
-      // Find the transcript panel container
-      const transcriptPanel = activeSegmentRef.current.closest('.transcript-panel');
-      if (transcriptPanel) {
-        // Get the position of the active segment relative to the transcript panel
-        const elementTop = activeSegmentRef.current.offsetTop;
-        const elementHeight = activeSegmentRef.current.offsetHeight;
-        const panelHeight = transcriptPanel.clientHeight;
-        const currentScrollTop = transcriptPanel.scrollTop;
-
-        // Calculate if the element is visible in the current viewport
-        const elementBottom = elementTop + elementHeight;
-        const viewportTop = currentScrollTop;
-        const viewportBottom = currentScrollTop + panelHeight;
-
-        // Only scroll if the element is not fully visible
-        const isFullyVisible = elementTop >= viewportTop && elementBottom <= viewportBottom;
-
-        if (!isFullyVisible) {
-          // Center the active segment in the viewport
-          const scrollTop = elementTop - (panelHeight / 2) + (elementHeight / 2);
-
-          transcriptPanel.scrollTo({
-            top: Math.max(0, scrollTop),
-            behavior: 'smooth'
-          });
-        }
+      // Debounce rapid segment changes to prevent erratic scrolling
+      if (lastScrolledSegmentRef.current === activeSegmentIndex) {
+        return; // Don't scroll if we already scrolled to this segment
       }
+
+      // Clear any pending scroll
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Use a delay to debounce rapid segment changes
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Check if we still need to scroll (segment might have changed again)
+        if (lastScrolledSegmentRef.current === activeSegmentIndex) {
+          return;
+        }
+
+        // Find the transcript panel container
+        const transcriptPanel = activeSegmentRef.current?.closest('.transcript-panel');
+        if (transcriptPanel && activeSegmentRef.current) {
+          // Get the position of the active segment relative to the transcript panel
+          const elementTop = activeSegmentRef.current.offsetTop;
+          const elementHeight = activeSegmentRef.current.offsetHeight;
+
+          // Calculate the header height more accurately
+          // The header is in the parent PlayerPage component, not in TranscriptPanel
+          // We need to account for:
+          // 1. The TranscriptPanel's own header (segment count + search)
+          // 2. Some padding to ensure visibility
+
+          // Find the TranscriptPanel's own header elements
+          const transcriptContainer = transcriptPanel.parentElement;
+          let headerHeight = 0;
+
+          if (transcriptContainer) {
+            // Look for the header elements within the TranscriptPanel component
+            const headerElements = transcriptContainer.querySelectorAll('.flex.items-center.justify-between, .relative.mb-4');
+            headerElements.forEach(el => {
+              headerHeight += el.offsetHeight;
+            });
+
+            // Add margins and padding (mb-4 = 16px, plus other spacing)
+            headerHeight += 60; // Increased to ensure proper clearance
+          }
+
+          // Use scrollIntoView with better positioning options
+          // This should respect the CSS scroll-margin-top we set
+          activeSegmentRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start', // Align to the start of the visible area
+            inline: 'nearest'
+          });
+
+          // Remember that we scrolled to this segment
+          lastScrolledSegmentRef.current = activeSegmentIndex;
+        }
+      }, 300); // Longer delay to reduce rapid scrolling
+
+      return () => {
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+      };
     }
   }, [activeSegmentIndex, focusMode]);
 
@@ -438,7 +476,6 @@ export const TranscriptPanel = ({
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium text-gray-900">Transcript</h3>
         <div className="flex items-center space-x-3">
           <div className="text-sm text-gray-500">
             {filteredSegments.length} segments
