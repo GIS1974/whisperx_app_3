@@ -208,14 +208,45 @@ export const ESLVideoPlayer = ({
     if (!playerRef.current || segments.length === 0) return;
 
     const currentTime = playerRef.current.currentTime();
-    const activeSegment = segments.findIndex(segment =>
-      currentTime >= segment.start && currentTime <= segment.end
-    );
 
-    // Set the current segment based on video time, or default to first segment
-    const segmentToShow = activeSegment !== -1 ? activeSegment : 0;
+    // Use the same enhanced timing logic as handleTimeUpdate to prevent mismatches
+    const activeSegment = segments.findIndex((segment) => {
+      const timing = calculatePreciseTiming(segment);
+      return currentTime >= timing.startTime && currentTime <= timing.endTime;
+    });
 
-    if (segmentToShow !== currentSegment) {
+    // If no segment contains the current time, find the closest one using enhanced boundaries
+    let segmentToShow = activeSegment;
+    if (activeSegment === -1) {
+      // Find the closest segment based on enhanced timing
+      segmentToShow = segments.findIndex((segment, index) => {
+        const timing = calculatePreciseTiming(segment);
+        const nextSegment = segments[index + 1];
+
+        if (nextSegment) {
+          const nextTiming = calculatePreciseTiming(nextSegment);
+          return currentTime >= timing.startTime && currentTime < nextTiming.startTime;
+        } else {
+          // Last segment - check if we're after its enhanced start
+          return currentTime >= timing.startTime;
+        }
+      });
+
+      // If still not found, use the last segment if we're past the end, otherwise keep current segment
+      if (segmentToShow === -1) {
+        const lastSegment = segments[segments.length - 1];
+        const lastTiming = calculatePreciseTiming(lastSegment);
+        if (currentTime > lastTiming.endTime) {
+          segmentToShow = segments.length - 1;
+        } else {
+          // Don't default to segment 0 - keep the current segment to prevent jumping
+          segmentToShow = currentSegment >= 0 ? currentSegment : 0;
+        }
+      }
+    }
+
+    // Only update if we found a valid segment and it's different from current
+    if (segmentToShow !== -1 && segmentToShow !== currentSegment) {
       setCurrentSegment(segmentToShow);
       if (onProgress) {
         onProgress(segmentToShow, segments[segmentToShow]);
@@ -226,16 +257,16 @@ export const ESLVideoPlayer = ({
     }
 
     console.log('Initialized subtitle display:', segmentToShow, segments[segmentToShow]?.text);
-  }, [segments, currentSegment, onProgress, onSegmentChange]);
+  }, [segments, currentSegment, onProgress, onSegmentChange, calculatePreciseTiming]);
 
   // Initialize subtitle display when segments are loaded
   useEffect(() => {
     if (segments.length > 0) {
       if (playerRef.current) {
-        // Initialize subtitle display after a short delay
+        // Initialize subtitle display after a short delay, but only once
         setTimeout(() => {
           initializeSubtitleDisplay();
-        }, 200);
+        }, 100);
       }
 
       // Start polling for time updates to ensure subtitles update
@@ -247,7 +278,7 @@ export const ESLVideoPlayer = ({
         if (playerRef.current && segments.length > 0) {
           handleTimeUpdate();
         }
-      }, 500); // Check every 500ms
+      }, 300); // Reduced to 300ms for more responsive updates
     }
 
     return () => {
@@ -325,11 +356,11 @@ export const ESLVideoPlayer = ({
     player.on('canplay', handleTimeUpdate); // When video can start playing
     player.on('play', () => {
       setIsPlaying(true);
-      handleTimeUpdate(); // Update immediately when play starts
+      // Don't call handleTimeUpdate immediately to prevent conflicts
     });
     player.on('pause', () => {
       setIsPlaying(false);
-      handleTimeUpdate(); // Update when paused to ensure correct subtitle
+      // Don't call handleTimeUpdate immediately to prevent conflicts
     });
     player.on('ended', handleVideoEnd);
 
@@ -346,12 +377,8 @@ export const ESLVideoPlayer = ({
     // Initialize volume
     player.volume(volume);
 
-    // Initialize subtitle display after player is ready
-    setTimeout(() => {
-      if (segments.length > 0) {
-        initializeSubtitleDisplay();
-      }
-    }, 300);
+    // The interval-based handleTimeUpdate will handle subtitle initialization
+    // No need for additional initializeSubtitleDisplay calls
   };
 
 
