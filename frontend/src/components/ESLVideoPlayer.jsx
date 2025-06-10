@@ -461,10 +461,9 @@ export const ESLVideoPlayer = ({
       if (currentTime >= timing.endTime) {
         playerRef.current.pause();
 
-        // In repeat mode, reset manual selection flag when segment completes
-        if (playbackMode === 'repeat') {
-          setManualSegmentSelection(false);
-        }
+        // In repeat mode, DON'T reset manual selection flag when segment completes
+        // This keeps the user focused on the selected segment until they manually change it
+        // The flag will be reset when they switch modes or select a different segment
 
         if (onSegmentComplete) {
           onSegmentComplete(segmentIndex, segment);
@@ -546,10 +545,8 @@ export const ESLVideoPlayer = ({
             if (currentTime >= timing.endTime) {
               playerRef.current.pause();
 
-              // In repeat mode, reset manual selection flag when segment completes
-              if (playbackMode === 'repeat') {
-                setManualSegmentSelection(false);
-              }
+              // In repeat mode, DON'T reset manual selection flag when segment completes
+              // This keeps the user focused on the selected segment until they manually change it
 
               if (onSegmentComplete) {
                 onSegmentComplete(currentSegment, currentSegmentData);
@@ -672,13 +669,14 @@ export const ESLVideoPlayer = ({
   };
 
   // Navigate to specific segment
-  const goToSegment = (segmentIndex) => {
+  const goToSegment = (segmentIndex, isManualSelection = false) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
 
     setCurrentSegment(segmentIndex);
 
-    // If navigating in repeat mode, mark as manual selection
-    if (playbackMode === 'repeat') {
+    // Only mark as manual selection if explicitly requested (e.g., clicking on segment)
+    // Arrow key navigation should not set manual selection to allow normal progression
+    if (isManualSelection) {
       setManualSegmentSelection(true);
     }
 
@@ -727,12 +725,16 @@ export const ESLVideoPlayer = ({
   // Navigation controls
   const goToPreviousSegment = (e) => {
     e?.preventDefault?.();
-    goToSegment(currentSegment - 1);
+    // Arrow key navigation should reset manual selection to allow normal progression
+    setManualSegmentSelection(false);
+    goToSegment(currentSegment - 1, false); // false = not manual selection
   };
 
   const goToNextSegment = (e) => {
     e?.preventDefault?.();
-    goToSegment(currentSegment + 1);
+    // Arrow key navigation should reset manual selection to allow normal progression
+    setManualSegmentSelection(false);
+    goToSegment(currentSegment + 1, false); // false = not manual selection
   };
 
   // Speed control
@@ -788,8 +790,8 @@ export const ESLVideoPlayer = ({
         playCurrentSegment: () => {
           playCurrentSegment();
         },
-        goToSegment: (segmentIndex) => {
-          goToSegment(segmentIndex);
+        goToSegment: (segmentIndex, isManualSelection = false) => {
+          goToSegment(segmentIndex, isManualSelection);
         },
         setMode: (mode) => {
           setMode(mode);

@@ -155,6 +155,10 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
       if (eslVideoPlayerAPI.setMode) {
         eslVideoPlayerAPI.setMode('repeat');
       }
+      // Then navigate to the segment with manual selection flag
+      if (eslVideoPlayerAPI.goToSegment) {
+        eslVideoPlayerAPI.goToSegment(segmentIndex, true); // true = manual selection
+      }
       // Then play the segment
       if (eslVideoPlayerAPI.playSegmentByIndex) {
         eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
