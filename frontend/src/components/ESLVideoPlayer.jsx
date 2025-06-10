@@ -177,7 +177,8 @@ export const ESLVideoPlayer = ({
         if (currentTime > lastTiming.endTime) {
           segmentToShow = segments.length - 1;
         } else {
-          segmentToShow = 0; // Default to first segment
+          // Don't default to segment 0 - keep the current segment to prevent jumping
+          segmentToShow = currentSegment >= 0 ? currentSegment : 0;
         }
       }
     }
@@ -191,6 +192,15 @@ export const ESLVideoPlayer = ({
 
       // Debounce segment changes to prevent rapid switching
       segmentChangeTimeoutRef.current = setTimeout(() => {
+        // Add warning if trying to set segment to 0 when we're not near the beginning
+        if (segmentToShow === 0 && playerRef.current) {
+          const currentTime = playerRef.current.currentTime();
+          const firstSegment = segments[0];
+          if (firstSegment && currentTime > firstSegment.end + 5) {
+            console.warn('WARNING: Trying to set segment to 0 when video time is', currentTime.toFixed(2), 'from segment', currentSegment);
+          }
+        }
+
         console.log('Changing segment from', currentSegment, 'to', segmentToShow, segments[segmentToShow]?.text);
         setCurrentSegment(segmentToShow);
         if (onProgress) {
@@ -247,6 +257,16 @@ export const ESLVideoPlayer = ({
 
     // Only update if we found a valid segment and it's different from current
     if (segmentToShow !== -1 && segmentToShow !== currentSegment) {
+      // Add warning if trying to set segment to 0 when we're not near the beginning
+      if (segmentToShow === 0 && playerRef.current) {
+        const currentTime = playerRef.current.currentTime();
+        const firstSegment = segments[0];
+        if (firstSegment && currentTime > firstSegment.end + 5) {
+          console.warn('WARNING: initializeSubtitleDisplay trying to set segment to 0 when video time is', currentTime.toFixed(2), 'from segment', currentSegment);
+          return; // Don't update to segment 0 if we're not near the beginning
+        }
+      }
+
       setCurrentSegment(segmentToShow);
       if (onProgress) {
         onProgress(segmentToShow, segments[segmentToShow]);
@@ -450,6 +470,16 @@ export const ESLVideoPlayer = ({
 
   // Play current segment
   const playCurrentSegment = () => {
+    // Add safeguard to prevent playing segment 0 unless we're actually at the beginning
+    if (currentSegment === 0 && playerRef.current) {
+      const currentTime = playerRef.current.currentTime();
+      const firstSegment = segments[0];
+      if (firstSegment && currentTime > firstSegment.end + 5) {
+        // We're not near the beginning, don't play segment 0
+        console.warn('Prevented playing segment 0 when video time is', currentTime.toFixed(2));
+        return;
+      }
+    }
     playSegment(currentSegment);
   };
 
