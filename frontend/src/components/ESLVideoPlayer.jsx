@@ -22,6 +22,7 @@ export const ESLVideoPlayer = ({
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [manualSegmentSelection, setManualSegmentSelection] = useState(false); // Track manual segment selection in REPEAT mode
   const [volume, setVolume] = useState(1); // Volume from 0 to 1
   const [isMuted, setIsMuted] = useState(false);
 
@@ -138,9 +139,9 @@ export const ESLVideoPlayer = ({
   const handleTimeUpdate = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
 
-    // In repeat mode, don't automatically change segments based on time
+    // In repeat mode, don't automatically change segments based on time if a segment was manually selected
     // This prevents unwanted segment switching when user is focused on one segment
-    if (playbackMode === 'repeat') {
+    if (playbackMode === 'repeat' && manualSegmentSelection) {
       return;
     }
 
@@ -211,11 +212,16 @@ export const ESLVideoPlayer = ({
         }
       }, 250); // Increased debounce to 250ms to reduce rapid changes
     }
-  }, [segments, currentSegment, onProgress, onSegmentChange, playbackMode]);
+  }, [segments, currentSegment, onProgress, onSegmentChange, playbackMode, manualSegmentSelection]);
 
   // Initialize subtitle display based on current video time
   const initializeSubtitleDisplay = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
+
+    // In repeat mode with manual selection, don't override the current segment
+    if (playbackMode === 'repeat' && manualSegmentSelection) {
+      return;
+    }
 
     const currentTime = playerRef.current.currentTime();
 
@@ -277,7 +283,7 @@ export const ESLVideoPlayer = ({
     }
 
     console.log('Initialized subtitle display:', segmentToShow, segments[segmentToShow]?.text);
-  }, [segments, currentSegment, onProgress, onSegmentChange, calculatePreciseTiming]);
+  }, [segments, currentSegment, onProgress, onSegmentChange, calculatePreciseTiming, playbackMode, manualSegmentSelection]);
 
   // Initialize subtitle display when segments are loaded
   useEffect(() => {
@@ -454,6 +460,12 @@ export const ESLVideoPlayer = ({
       // Check if we've reached or passed the end time
       if (currentTime >= timing.endTime) {
         playerRef.current.pause();
+
+        // In repeat mode, reset manual selection flag when segment completes
+        if (playbackMode === 'repeat') {
+          setManualSegmentSelection(false);
+        }
+
         if (onSegmentComplete) {
           onSegmentComplete(segmentIndex, segment);
         }
@@ -533,6 +545,12 @@ export const ESLVideoPlayer = ({
 
             if (currentTime >= timing.endTime) {
               playerRef.current.pause();
+
+              // In repeat mode, reset manual selection flag when segment completes
+              if (playbackMode === 'repeat') {
+                setManualSegmentSelection(false);
+              }
+
               if (onSegmentComplete) {
                 onSegmentComplete(currentSegment, currentSegmentData);
               }
@@ -659,6 +677,11 @@ export const ESLVideoPlayer = ({
 
     setCurrentSegment(segmentIndex);
 
+    // If navigating in repeat mode, mark as manual selection
+    if (playbackMode === 'repeat') {
+      setManualSegmentSelection(true);
+    }
+
     // Notify parent component of segment change
     if (onProgress) {
       onProgress(segmentIndex, segments[segmentIndex]);
@@ -686,12 +709,15 @@ export const ESLVideoPlayer = ({
     setPlaybackMode(mode);
 
     if (mode === 'listen') {
+      setManualSegmentSelection(false); // Reset manual selection flag
       playCurrentSegment();
     } else if (mode === 'repeat') {
       // In repeat mode, play the current segment and pause at the end
+      setManualSegmentSelection(true); // Set manual selection flag to prevent auto-switching
       playCurrentSegment();
     } else if (mode === 'normal' && (previousMode === 'repeat' || previousMode === 'listen')) {
-      // When switching from repeat/listen to normal, pause the video
+      // When switching from repeat/listen to normal, pause the video and reset manual selection
+      setManualSegmentSelection(false);
       if (playerRef.current) {
         playerRef.current.pause();
       }
@@ -751,6 +777,7 @@ export const ESLVideoPlayer = ({
         playSegmentByIndex: (segmentIndex) => {
           if (segmentIndex >= 0 && segmentIndex < segments.length) {
             setCurrentSegment(segmentIndex);
+            setManualSegmentSelection(true); // Mark as manual selection
             setTimeout(() => {
               // Navigate to enhanced start position then play
               navigateToSegmentStart(segmentIndex);
