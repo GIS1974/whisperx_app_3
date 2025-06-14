@@ -151,17 +151,13 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
 
     // Switch to repeat mode and trigger playback through ESLVideoPlayer
     if (eslVideoPlayerAPI) {
-      // First switch to repeat mode
+      // First switch to repeat mode (this no longer auto-plays)
       if (eslVideoPlayerAPI.setMode) {
         eslVideoPlayerAPI.setMode('repeat');
       }
-      // Then navigate to the segment with manual selection flag
-      if (eslVideoPlayerAPI.goToSegment) {
-        eslVideoPlayerAPI.goToSegment(segmentIndex, true); // true = manual selection
-      }
-      // Then play the segment
+      // Play the specific segment with forced repeat mode
       if (eslVideoPlayerAPI.playSegmentByIndex) {
-        eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+        eslVideoPlayerAPI.playSegmentByIndex(segmentIndex, 'repeat');
       }
     }
   };
@@ -323,7 +319,7 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
                       activeSegmentIndex={activeSegmentIndex}
                       currentTime={currentTime}
                       onSegmentClick={handleSegmentClick}
-                      onWordClick={(time, word) => {
+                      onWordClick={(time) => {
                         // Find the segment containing this word and select it
                         const segmentIndex = segments.findIndex(segment =>
                           time >= segment.start && time <= segment.end
@@ -340,9 +336,9 @@ export const PlayerPage = ({ onPlayerPageInfoChange }) => {
                             if (eslVideoPlayerAPI.setMode) {
                               eslVideoPlayerAPI.setMode('repeat');
                             }
-                            // Then play the segment
+                            // Then play the segment with forced repeat mode
                             if (eslVideoPlayerAPI.playSegmentByIndex) {
-                              eslVideoPlayerAPI.playSegmentByIndex(segmentIndex);
+                              eslVideoPlayerAPI.playSegmentByIndex(segmentIndex, 'repeat');
                             }
                           }
                         }

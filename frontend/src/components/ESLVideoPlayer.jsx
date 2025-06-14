@@ -139,9 +139,9 @@ export const ESLVideoPlayer = ({
   const handleTimeUpdate = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
 
-    // In repeat mode, don't automatically change segments based on time if a segment was manually selected
+    // In repeat mode, NEVER automatically change segments based on time
     // This prevents unwanted segment switching when user is focused on one segment
-    if (playbackMode === 'repeat' && manualSegmentSelection) {
+    if (playbackMode === 'repeat') {
       return;
     }
 
@@ -218,8 +218,8 @@ export const ESLVideoPlayer = ({
   const initializeSubtitleDisplay = useCallback(() => {
     if (!playerRef.current || segments.length === 0) return;
 
-    // In repeat mode with manual selection, don't override the current segment
-    if (playbackMode === 'repeat' && manualSegmentSelection) {
+    // In repeat mode, NEVER override the current segment
+    if (playbackMode === 'repeat') {
       return;
     }
 
@@ -518,38 +518,42 @@ export const ESLVideoPlayer = ({
         playVideo();
       }
     } else if (playbackMode === 'repeat') {
-      // Repeat mode - special handling for pause/resume
+      // Repeat mode - always restart from beginning of current segment
+      // This ensures consistent behavior whether paused mid-segment or at the end
       if (isPlaying) {
         pauseVideo();
       } else {
-        // Check if we're within the current segment bounds
-        const currentTime = playerRef.current.currentTime();
-        const currentSegmentData = segments[currentSegment];
+        // Use the new playback function for consistent REPEAT mode behavior
+        // This matches the behavior when clicking on segments
+        if (currentSegment >= 0 && currentSegment < segments.length) {
+          setManualSegmentSelection(true); // Mark as manual selection
 
-        if (currentSegmentData &&
-            currentTime >= currentSegmentData.start &&
-            currentTime <= currentSegmentData.end) {
-          // We're within the segment, just resume playback
-          playVideo();
+          const segment = segments[currentSegment];
+          if (!segment) return;
 
-          // Set up the end-time checker for the remaining time
+          // Clear any existing timeout
           if (segmentTimeoutRef.current) {
             clearTimeout(segmentTimeoutRef.current);
           }
 
-          const timing = calculatePreciseTiming(currentSegmentData);
+          // Calculate timing for repeat mode
+          const timing = calculatePreciseTiming(segment);
+
+          console.log(`Playing segment ${currentSegment} in repeat mode:`, timing);
+
+          // Set player to precise start time
+          playerRef.current.currentTime(timing.startTime);
+          playerRef.current.play();
+
+          // Set up end-time checker
           const checkEndTime = () => {
             if (!playerRef.current) return;
             const currentTime = playerRef.current.currentTime();
 
             if (currentTime >= timing.endTime) {
               playerRef.current.pause();
-
-              // In repeat mode, DON'T reset manual selection flag when segment completes
-              // This keeps the user focused on the selected segment until they manually change it
-
               if (onSegmentComplete) {
-                onSegmentComplete(currentSegment, currentSegmentData);
+                onSegmentComplete(currentSegment, segment);
               }
               return;
             }
@@ -557,10 +561,7 @@ export const ESLVideoPlayer = ({
             segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
           };
 
-          segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
-        } else {
-          // We're outside the segment, restart from beginning
-          playCurrentSegment();
+          segmentTimeoutRef.current = setTimeout(checkEndTime, 100);
         }
       }
     } else {
@@ -669,7 +670,7 @@ export const ESLVideoPlayer = ({
   };
 
   // Navigate to specific segment
-  const goToSegment = (segmentIndex, isManualSelection = false) => {
+  const goToSegment = (segmentIndex, isManualSelection = false, autoPlay = false) => {
     if (segmentIndex < 0 || segmentIndex >= segments.length) return;
 
     setCurrentSegment(segmentIndex);
@@ -692,7 +693,8 @@ export const ESLVideoPlayer = ({
       // Use enhanced timing for navigation to prevent cut-offs
       navigateToSegmentStart(segmentIndex);
 
-      if (playbackMode !== 'normal') {
+      // Only auto-play if explicitly requested
+      if (autoPlay && playbackMode !== 'normal') {
         playSegment(segmentIndex);
       }
     }
@@ -710,9 +712,9 @@ export const ESLVideoPlayer = ({
       setManualSegmentSelection(false); // Reset manual selection flag
       playCurrentSegment();
     } else if (mode === 'repeat') {
-      // In repeat mode, play the current segment and pause at the end
+      // In repeat mode, just set the manual selection flag
+      // Don't automatically play - let the caller handle playback
       setManualSegmentSelection(true); // Set manual selection flag to prevent auto-switching
-      playCurrentSegment();
     } else if (mode === 'normal' && (previousMode === 'repeat' || previousMode === 'listen')) {
       // When switching from repeat/listen to normal, pause the video and reset manual selection
       setManualSegmentSelection(false);
@@ -725,16 +727,26 @@ export const ESLVideoPlayer = ({
   // Navigation controls
   const goToPreviousSegment = (e) => {
     e?.preventDefault?.();
-    // Arrow key navigation should reset manual selection to allow normal progression
-    setManualSegmentSelection(false);
-    goToSegment(currentSegment - 1, false); // false = not manual selection
+    // In REPEAT mode, arrow keys should navigate and auto-play the new segment
+    if (playbackMode === 'repeat') {
+      goToSegment(currentSegment - 1, true, true); // manual selection + auto-play
+    } else {
+      // In other modes, reset manual selection to allow normal progression
+      setManualSegmentSelection(false);
+      goToSegment(currentSegment - 1, false, false);
+    }
   };
 
   const goToNextSegment = (e) => {
     e?.preventDefault?.();
-    // Arrow key navigation should reset manual selection to allow normal progression
-    setManualSegmentSelection(false);
-    goToSegment(currentSegment + 1, false); // false = not manual selection
+    // In REPEAT mode, arrow keys should navigate and auto-play the new segment
+    if (playbackMode === 'repeat') {
+      goToSegment(currentSegment + 1, true, true); // manual selection + auto-play
+    } else {
+      // In other modes, reset manual selection to allow normal progression
+      setManualSegmentSelection(false);
+      goToSegment(currentSegment + 1, false, false);
+    }
   };
 
   // Speed control
@@ -776,22 +788,67 @@ export const ESLVideoPlayer = ({
   useEffect(() => {
     if (onPlayerReady) {
       onPlayerReady({
-        playSegmentByIndex: (segmentIndex) => {
+        playSegmentByIndex: (segmentIndex, forceMode = null) => {
           if (segmentIndex >= 0 && segmentIndex < segments.length) {
             setCurrentSegment(segmentIndex);
             setManualSegmentSelection(true); // Mark as manual selection
+
+            // If a mode is forced, use it temporarily for this playback
+            const modeToUse = forceMode || playbackMode;
+
             setTimeout(() => {
               // Navigate to enhanced start position then play
               navigateToSegmentStart(segmentIndex);
-              playSegment(segmentIndex);
+
+              // Use the specified mode for timing calculation
+              const segment = segments[segmentIndex];
+              if (!segment) return;
+
+              // Clear any existing timeout
+              if (segmentTimeoutRef.current) {
+                clearTimeout(segmentTimeoutRef.current);
+              }
+
+              // Calculate timing based on the mode to use
+              const timing = modeToUse === 'repeat'
+                ? calculatePreciseTiming(segment)
+                : {
+                    startTime: segment.start,
+                    endTime: segment.end,
+                    duration: segment.duration
+                  };
+
+              console.log(`Playing segment ${segmentIndex} in ${modeToUse} mode:`, timing);
+
+              // Set player to precise start time
+              playerRef.current.currentTime(timing.startTime);
+              playerRef.current.play();
+
+              // Set up end-time checker
+              const checkEndTime = () => {
+                if (!playerRef.current) return;
+                const currentTime = playerRef.current.currentTime();
+
+                if (currentTime >= timing.endTime) {
+                  playerRef.current.pause();
+                  if (onSegmentComplete) {
+                    onSegmentComplete(segmentIndex, segment);
+                  }
+                  return;
+                }
+
+                segmentTimeoutRef.current = setTimeout(checkEndTime, 50);
+              };
+
+              segmentTimeoutRef.current = setTimeout(checkEndTime, 100);
             }, 100);
           }
         },
         playCurrentSegment: () => {
           playCurrentSegment();
         },
-        goToSegment: (segmentIndex, isManualSelection = false) => {
-          goToSegment(segmentIndex, isManualSelection);
+        goToSegment: (segmentIndex, isManualSelection = false, autoPlay = false) => {
+          goToSegment(segmentIndex, isManualSelection, autoPlay);
         },
         setMode: (mode) => {
           setMode(mode);
